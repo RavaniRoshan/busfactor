@@ -106,7 +106,7 @@
   --brand-tertiary: oklch(0.985 0.005 259);
   --text-primary: oklch(0.21 0.02 259);
   --text-secondary: oklch(0.45 0.015 259);
-  --text-tertiary: oklch(0.6 0.012 259);
+  --text-tertiary: oklch(0.5 0.015 259);
   --border-primary: oklch(0.86 0.01 259);
   --border-secondary: oklch(0.92 0.006 259);
   --bg-faint: oklch(0.965 0.005 259);
@@ -167,7 +167,7 @@
   --brand-tertiary: oklch(0.18 0.02 259);
   --text-primary: oklch(0.97 0.005 259);
   --text-secondary: oklch(0.78 0.015 259);
-  --text-tertiary: oklch(0.65 0.015 259);
+  --text-tertiary: oklch(0.78 0.015 259);
   --border-primary: oklch(1 0 0 / 18%);
   --border-secondary: oklch(1 0 0 / 11%);
   --bg-faint: oklch(0.23 0.02 259);

@@ -24,7 +24,7 @@ describe("GroqProvider", () => {
     expect(url).toBe("https://api.groq.com/openai/v1/chat/completions");
     expect((init.headers as Record<string, string>).authorization).toBe("Bearer test-key");
     const body = JSON.parse(init.body as string) as Record<string, unknown>;
-    expect(body.model).toBe("openai/gpt-oss-120b");
+    expect(body.model).toBe("openai/gpt-oss-20b");
     expect(body.max_completion_tokens).toBe(500);
     expect(body.messages).toEqual([
       { role: "system", content: "sys" },

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { makeSlug, store } from "@/lib/store";
+import { hashIp } from "@/lib/ip";
 
 export const maxDuration = 60;
 
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "target is required" }, { status: 400 });
   }
 
-  const allowed = await store.rateLimits.consume(clientIp(request), today(), 10);
+  const allowed = await store.rateLimits.consume(hashIp(clientIp(request)), today(), 10);
   if (!allowed) {
     return Response.json({ error: "rate limit exceeded" }, { status: 429 });
   }

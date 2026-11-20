@@ -6,7 +6,7 @@ export interface GroqProviderOptions {
   fetchImpl?: typeof fetch;
 }
 
-const DEFAULT_MODEL = "openai/gpt-oss-120b";
+const DEFAULT_MODEL = "openai/gpt-oss-20b";
 const ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
 export class GroqProvider implements LLMProvider {
