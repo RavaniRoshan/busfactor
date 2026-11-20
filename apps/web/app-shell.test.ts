@@ -23,6 +23,15 @@ describe("webapp shell", () => {
     expect(css).toContain("var(--font-jetbrains-mono)");
   });
 
+  it("renders the report workspace without losing noindex", () => {
+    const page = readFileSync(path.join(root, "app/r/[slug]/page.tsx"), "utf8");
+    expect(page).toContain("ReportWindow");
+    expect(page).toContain("parseReportView");
+    expect(page).toContain("robots: { index: false, follow: false }");
+    expect(page).toContain("searchParams");
+    expect(page).not.toContain("Example report");
+  });
+
   it("routes the root into the app", () => {
     const page = readFileSync(path.join(root, "app/page.tsx"), "utf8");
     expect(page).toContain('redirect("/scan")');
