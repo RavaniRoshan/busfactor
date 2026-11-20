@@ -63,6 +63,12 @@ importers:
         specifier: ^6.1.13
         version: 6.1.13
 
+  packages/mcp:
+    dependencies:
+      '@busfactor/core':
+        specifier: workspace:*
+        version: link:../core
+
 packages:
 
   '@esbuild/aix-ppc64@0.28.2':

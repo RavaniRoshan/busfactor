@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-11-20 — P2.4 (override)
+
+- Decision: Implement the MCP server and handoff skill ahead of Gate A at the user's request.
+- Branch taken: Manual JSON-RPC stdio server instead of adding an MCP SDK dependency; skill points at the local CLI build until publication.
+- Why: The user explicitly asked for MCP and skill support. Gate A remains unvalidated, so this is an override, not gate completion.
+- Scope: `packages/mcp` and `skills/handoff/SKILL.md`.
+
+
 ## 2026-11-20 — P1.7
 
 - Decision: Implement the CLI as a thin wrapper over `scanTarget`, write Markdown, JSON, OPERATE.md, and author questions, and use exit code 2 for `--fail-under`.
