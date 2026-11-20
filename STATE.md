@@ -1,17 +1,17 @@
 phase: MVP
-last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ c264dae
+last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ efd3130
 status: PASS
 gates:
   p0_bootstrap: pass
   url_ingest: stale
   llm_live: stale
   gate_a: not_started
-  web_deploy: pass (production, dpl_BByXDVv1ycGKt9czk5wHZgyba5xa, 20 Nov 2026; remote main synced)
+  web_deploy: pass (production, dpl_Cd4AayCjE5QyNZDSM14D5zyuBAhm, 20 Nov 2026; remote main synced)
   web_navigation: pass (app shell: / → /scan ↔ /docs ↔ /r/:slug)
   web_landing_removed: pass (no landing artifacts in webapp or repo)
   web_scan_e2e: pass (production POST 200 → report 200 → badge 200, deployment dpl_FinFhuyAXwfJqFXzvpef4xYb8KiM)
   web_persistence_code: pass (Neon adapter + async store API, 35 tests)
-  report_workspace: pass (four-view dark workspace, Space UI MIT primitives, 54 tests, fresh review Clean/approve)
+  report_workspace: pass (four-view dark workspace, no decorative backdrop, Space UI MIT primitives, 55 tests, fresh review Clean/approve)
 env:
   pkg_manager: pnpm@10.15.0 (activated via corepack)
   node: v24.21.0

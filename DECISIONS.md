@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-11-20 — Report panel cleanup and dashboard skills
+
+- Decision: Remove the scenic backdrop from the report workspace and stop Base UI from warning about link-based nav tabs.
+- Branch taken: Deleted `public/dusk-road.webp`, removed `report-backdrop` CSS and its wrapper, set `nativeButton={false}` on `TabsTab` links, and added a source-level guard for that prop. Updated `docs/report-workspace-design.md` so the spec matches the shipped UI.
+- Why: The backdrop was a presentation prop from the Figma reference and added noise without operator value; Base UI tabs rendered `<a>` elements while defaulting to native-button semantics.
+- Evidence: `pnpm gate` passes (25 core + 30 web tests), build passes, fresh dev request produced zero `nativeButton` warnings, production deployment `dpl_Cd4AayCjE5QyNZDSM14D5zyuBAhm` has scan 200 → report 200 with zero backdrop references in the HTML.
+- Also installed: `.agents/skills/build-dashboard` (Safe / 0 Socket alerts / low Snyk) at Roshan's request. `dashboard-builder` principles are available for the next design decision; no dashboard surface was changed in this commit.
+
 ## 2026-11-20 — Report workspace redesign (plan execution)
 
 - Decision: Rebuild `/r/[slug]` as the dark four-view workspace from the reference screenshots using MIT Space UI community primitives.
