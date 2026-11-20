@@ -1,0 +1,293 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`report contract > matches the exported JSON schema snapshot 1`] = `
+{
+  "$ref": "#/definitions/Report",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Report": {
+      "additionalProperties": false,
+      "properties": {
+        "authorQuestions": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "evidence": {
+                "items": {
+                  "$ref": "#/definitions/Report/properties/findings/items/properties/evidence/items",
+                },
+                "minItems": 1,
+                "type": "array",
+              },
+              "id": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "question": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "why": {
+                "minLength": 1,
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "question",
+              "why",
+              "evidence",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "dimensions": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "dimension": {
+                "enum": [
+                  "runnability",
+                  "secrets_config",
+                  "failure_observability",
+                  "tests_ci",
+                  "critical_paths",
+                  "dependencies",
+                  "knowledge_capture",
+                ],
+                "type": "string",
+              },
+              "findingCount": {
+                "minimum": 0,
+                "type": "integer",
+              },
+              "label": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "score": {
+                "maximum": 100,
+                "minimum": 0,
+                "type": "number",
+              },
+              "weight": {
+                "exclusiveMinimum": 0,
+                "type": "number",
+              },
+              "weightedScore": {
+                "minimum": 0,
+                "type": "number",
+              },
+            },
+            "required": [
+              "dimension",
+              "label",
+              "score",
+              "weight",
+              "weightedScore",
+              "findingCount",
+            ],
+            "type": "object",
+          },
+          "maxItems": 7,
+          "minItems": 7,
+          "type": "array",
+        },
+        "findings": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "dimension": {
+                "$ref": "#/definitions/Report/properties/dimensions/items/properties/dimension",
+              },
+              "evidence": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "file": {
+                      "minLength": 1,
+                      "type": "string",
+                    },
+                    "lineEnd": {
+                      "exclusiveMinimum": 0,
+                      "type": "integer",
+                    },
+                    "lineStart": {
+                      "exclusiveMinimum": 0,
+                      "type": "integer",
+                    },
+                    "quote": {
+                      "maxLength": 200,
+                      "minLength": 1,
+                      "type": "string",
+                    },
+                  },
+                  "required": [
+                    "file",
+                    "lineStart",
+                    "lineEnd",
+                    "quote",
+                  ],
+                  "type": "object",
+                },
+                "type": "array",
+              },
+              "id": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "message": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "ruleId": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "severity": {
+                "enum": [
+                  "critical",
+                  "high",
+                  "medium",
+                  "low",
+                  "info",
+                ],
+                "type": "string",
+              },
+              "source": {
+                "enum": [
+                  "deterministic",
+                  "llm",
+                ],
+                "type": "string",
+              },
+              "validated": {
+                "default": false,
+                "type": "boolean",
+              },
+            },
+            "required": [
+              "id",
+              "dimension",
+              "ruleId",
+              "severity",
+              "message",
+              "source",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "costUsd": {
+              "minimum": 0,
+              "type": "number",
+            },
+            "durationMs": {
+              "minimum": 0,
+              "type": "integer",
+            },
+            "engineVersion": {
+              "minLength": 1,
+              "type": "string",
+            },
+            "fileCount": {
+              "minimum": 0,
+              "type": "integer",
+            },
+            "limitations": {
+              "default": [],
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "limitedAnalysis": {
+              "type": "boolean",
+            },
+            "rubricVersion": {
+              "minLength": 1,
+              "type": "string",
+            },
+            "scannedAt": {
+              "format": "date-time",
+              "type": "string",
+            },
+            "sha": {
+              "minLength": 1,
+              "type": "string",
+            },
+            "source": {
+              "enum": [
+                "local",
+                "github",
+              ],
+              "type": "string",
+            },
+            "stack": {
+              "enum": [
+                "js",
+                "ts",
+                "python",
+                "mixed",
+                "unsupported",
+              ],
+              "type": "string",
+            },
+            "totalBytes": {
+              "minimum": 0,
+              "type": "integer",
+            },
+          },
+          "required": [
+            "engineVersion",
+            "rubricVersion",
+            "sha",
+            "scannedAt",
+            "durationMs",
+            "costUsd",
+            "stack",
+            "fileCount",
+            "totalBytes",
+            "limitedAnalysis",
+            "source",
+          ],
+          "type": "object",
+        },
+        "operateMd": {
+          "minLength": 1,
+          "type": "string",
+        },
+        "score": {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "verdict": {
+          "enum": [
+            "handoff-ready",
+            "operable-with-briefing",
+            "risky",
+            "author-only",
+          ],
+          "type": "string",
+        },
+      },
+      "required": [
+        "score",
+        "verdict",
+        "dimensions",
+        "findings",
+        "authorQuestions",
+        "operateMd",
+        "meta",
+      ],
+      "type": "object",
+    },
+  },
+}
+`;

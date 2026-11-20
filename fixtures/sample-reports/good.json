@@ -1,0 +1,30 @@
+{
+  "score": 90,
+  "verdict": "handoff-ready",
+  "dimensions": [
+    { "dimension": "runnability", "label": "Runnability", "score": 95, "weight": 20, "weightedScore": 19, "findingCount": 0 },
+    { "dimension": "secrets_config", "label": "Secrets and config", "score": 100, "weight": 15, "weightedScore": 15, "findingCount": 0 },
+    { "dimension": "failure_observability", "label": "Failure handling and observability", "score": 90, "weight": 15, "weightedScore": 13.5, "findingCount": 1 },
+    { "dimension": "tests_ci", "label": "Tests and CI", "score": 95, "weight": 15, "weightedScore": 14.25, "findingCount": 0 },
+    { "dimension": "critical_paths", "label": "Critical paths", "score": 85, "weight": 15, "weightedScore": 12.75, "findingCount": 2 },
+    { "dimension": "dependencies", "label": "Dependencies", "score": 100, "weight": 10, "weightedScore": 10, "findingCount": 0 },
+    { "dimension": "knowledge_capture", "label": "Knowledge capture", "score": 90, "weight": 10, "weightedScore": 9, "findingCount": 0 }
+  ],
+  "findings": [],
+  "authorQuestions": [],
+  "operateMd": "# OPERATE.md\n\nRun `npm test` before changing anything.\n",
+  "meta": {
+    "engineVersion": "0.1.0",
+    "rubricVersion": "0.1.0",
+    "sha": "0123456789abcdef0123456789abcdef01234567",
+    "scannedAt": "2026-11-20T00:00:00.000Z",
+    "durationMs": 1200,
+    "costUsd": 0.08,
+    "stack": "ts",
+    "fileCount": 42,
+    "totalBytes": 12345,
+    "limitedAnalysis": false,
+    "source": "local",
+    "limitations": []
+  }
+}

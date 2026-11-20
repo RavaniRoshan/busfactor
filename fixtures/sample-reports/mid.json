@@ -1,0 +1,62 @@
+{
+  "score": 74,
+  "verdict": "operable-with-briefing",
+  "dimensions": [
+    { "dimension": "runnability", "label": "Runnability", "score": 80, "weight": 20, "weightedScore": 16, "findingCount": 1 },
+    { "dimension": "secrets_config", "label": "Secrets and config", "score": 70, "weight": 15, "weightedScore": 10.5, "findingCount": 2 },
+    { "dimension": "failure_observability", "label": "Failure handling and observability", "score": 75, "weight": 15, "weightedScore": 11.25, "findingCount": 1 },
+    { "dimension": "tests_ci", "label": "Tests and CI", "score": 65, "weight": 15, "weightedScore": 9.75, "findingCount": 2 },
+    { "dimension": "critical_paths", "label": "Critical paths", "score": 70, "weight": 15, "weightedScore": 10.5, "findingCount": 1 },
+    { "dimension": "dependencies", "label": "Dependencies", "score": 85, "weight": 10, "weightedScore": 8.5, "findingCount": 1 },
+    { "dimension": "knowledge_capture", "label": "Knowledge capture", "score": 75, "weight": 10, "weightedScore": 7.5, "findingCount": 1 }
+  ],
+  "findings": [
+    {
+      "id": "f1",
+      "dimension": "runnability",
+      "ruleId": "run.readme.steps",
+      "severity": "medium",
+      "message": "The README does not document a start command.",
+      "evidence": [
+        {
+          "file": "README.md",
+          "lineStart": 1,
+          "lineEnd": 1,
+          "quote": "# Example service"
+        }
+      ],
+      "source": "deterministic",
+      "validated": true
+    }
+  ],
+  "authorQuestions": [
+    {
+      "id": "q1",
+      "question": "Which queue backend is required in production?",
+      "why": "The code reads QUEUE_URL but no deploy configuration documents it.",
+      "evidence": [
+        {
+          "file": "src/queue.ts",
+          "lineStart": 3,
+          "lineEnd": 3,
+          "quote": "const queueUrl = process.env.QUEUE_URL;"
+        }
+      ]
+    }
+  ],
+  "operateMd": "# OPERATE.md\n\nSet QUEUE_URL before starting the service.\n",
+  "meta": {
+    "engineVersion": "0.1.0",
+    "rubricVersion": "0.1.0",
+    "sha": "fedcba9876543210fedcba9876543210fedcba98",
+    "scannedAt": "2026-11-20T00:00:00.000Z",
+    "durationMs": 1800,
+    "costUsd": 0.12,
+    "stack": "js",
+    "fileCount": 18,
+    "totalBytes": 5400,
+    "limitedAnalysis": false,
+    "source": "github",
+    "limitations": []
+  }
+}
