@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: P1.7 @ b4cfaa7
+last_prompt: P1.8 @ 9bdd658
 status: PASS
 gates:
   p0_bootstrap: pass
@@ -19,4 +19,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: []
-next: P1.8 because Gate A is deferred by user request
+next: P2.1 because the web MVP builds and scans successfully
