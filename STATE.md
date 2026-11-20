@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: P1.8 @ 9bdd658
+last_prompt: P2.3 @ a14261d
 status: PASS
 gates:
   p0_bootstrap: pass
@@ -19,4 +19,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: []
-next: P2.3 because rate limits, cache, and kill switch are implemented
+next: P2.5 because eval harness and CI gate are implemented
