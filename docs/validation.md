@@ -43,7 +43,7 @@ Status: **partial**. Technical items below have evidence; human items remain.
 | Hosted scan → report | GO | Production scan 200, report 200, badge 200; verified after Neon integration. |
 | Kill switch | GO | Local `BUSFACTOR_KILL_SWITCH=1` returned HTTP 503 with `{"error":"scans are temporarily disabled"}`. |
 | Spend cap | GO | Local `BUSFACTOR_DAILY_SPEND_CAP_USD=0` returned HTTP 503 with `{"error":"daily spend cap reached"}`. |
-| Deterministic verification | GO | `pnpm gate` 66 unit tests pass; `pnpm verify` 20/20 pass. |
+| Deterministic verification | GO | `pnpm gate` 67 unit tests pass; `pnpm verify` 20/20 pass. |
 | Legal pages live | PARTIAL | Privacy, terms and removal rewritten from real data flows with operator name and email; governing law/jurisdiction marked `[NEEDED]`. |
 | Admin token | NOT SET | `BUSFACTOR_ADMIN_TOKEN` is absent on Vercel; `/admin/metrics` shows Unauthorized. |
 | CLI published | BLOCKED | `npm whoami` returns 401 — no npm credentials in this environment. |
