@@ -25,4 +25,12 @@ describe("report workspace surface", () => {
     }
     expect(css).toContain("--color-brand-primary");
   });
+
+  it("scopes theme-derived tokens to the dark panel", () => {
+    const css = readFileSync(path.join(root, "app/globals.css"), "utf8");
+    expect(css).toContain("--text-secondary: var(--rw-muted)");
+    expect(css).toContain("--muted: var(--rw-surface-raised)");
+    expect(css).toContain("--success: var(--rw-success)");
+    expect(css).toContain("--danger: var(--rw-danger)");
+  });
 });

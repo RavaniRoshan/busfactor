@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTab } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { Toolbar, ToolbarLink } from "@/components/ui/toolbar";
 import { BusFactorMark } from "@/components/logo";
 import type { Report, ReportViewId } from "@/lib/report-view";
@@ -19,7 +19,7 @@ const views: ViewDef[] = [
   { id: "questions", label: "Author questions", icon: CircleHelp },
 ];
 
-const content: Record<ReportViewId, (props: { report: Report }) => ReactNode> = {
+const content: Record<ReportViewId, (props: { report: Report; slug: string }) => ReactNode> = {
   verdict: VerdictView,
   risks: RiskMapView,
   operate: OperateView,
@@ -41,32 +41,36 @@ export function ReportWindow({ report, slug, view }: { report: Report; slug: str
           <span className="truncate font-mono text-label-sm">{slug}</span>
           <Badge variant="secondary" size="sm">Report</Badge>
         </div>
-        <span className="shrink-0 text-label-sm text-text-secondary">
-          Score <span className="font-mono tabular-nums">{report.score}/100</span>
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-xs">
+          <span className="text-label-sm text-text-secondary">
+            Score <span className="font-mono tabular-nums">{report.score}/100</span>
+          </span>
+          <span className="font-mono text-[0.625rem] text-text-tertiary">
+            SHA {report.meta.sha} · Engine {report.meta.engineVersion} · Rubric {report.meta.rubricVersion}
+          </span>
+        </div>
       </header>
 
-      <div className="rw-body">
-        <Tabs defaultValue={view} orientation="vertical" className="rw-nav">
-          <TabsList className="rw-nav">
-            {views.map(({ id, label, icon: Icon }) => (
-              <TabsTab
-                key={id}
-                value={id}
-                className={`rw-nav-link ${view === id ? "rw-nav-active" : ""}`}
-                aria-current={view === id ? "page" : undefined}
-                render={<a href={hrefFor(slug, id)} />}
-              >
-                <Icon className="size-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-                {label}
-              </TabsTab>
-            ))}
-          </TabsList>
-        </Tabs>
+      <Tabs defaultValue={view} orientation="vertical" className="rw-body">
+        <TabsList className="rw-nav">
+          {views.map(({ id, label, icon: Icon }) => (
+            <TabsTab
+              key={id}
+              value={id}
+              tabIndex={view === id ? 0 : -1}
+              className={`rw-nav-link ${view === id ? "rw-nav-active" : ""}`}
+              aria-current={view === id ? "page" : undefined}
+              render={<a href={hrefFor(slug, id)} />}
+            >
+              <Icon className="size-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+              {label}
+            </TabsTab>
+          ))}
+        </TabsList>
 
-        <div className="relative min-w-0">
+        <TabsPanel value={view} className="relative min-w-0">
           <div className="rw-content">
-            <View report={report} />
+            <View report={report} slug={slug} />
           </div>
           <div className="absolute inset-x-0 bottom-xl flex justify-center">
             <Toolbar className="rw-toolbar" aria-label="Report sections">
@@ -76,6 +80,7 @@ export function ReportWindow({ report, slug, view }: { report: Report; slug: str
                   href={hrefFor(slug, id)}
                   aria-label={`Show ${label}`}
                   aria-pressed={view === id}
+                  role="button"
                   className={`rw-toolbar-link ${view === id ? "rw-toolbar-active" : ""}`}
                 >
                   <Icon className="size-4" strokeWidth={1.5} aria-hidden="true" />
@@ -83,8 +88,8 @@ export function ReportWindow({ report, slug, view }: { report: Report; slug: str
               ))}
             </Toolbar>
           </div>
-        </div>
-      </div>
+        </TabsPanel>
+      </Tabs>
     </section>
   );
 }

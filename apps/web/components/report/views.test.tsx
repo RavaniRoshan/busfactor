@@ -69,9 +69,24 @@ describe("report views", () => {
 
   it("renders parsed OPERATE.md sections and unknown text", () => {
     const html = renderToStaticMarkup(
-      <OperateView report={{ ...fixture, operateMd: "## Rollback\nUNKNOWN: ask the author" }} />,
+      <OperateView report={{ ...fixture, operateMd: "## Rollback\nUNKNOWN: ask the author" }} slug="acme/payments-api" />,
     );
+    expect(html).toContain("Operating acme/payments-api");
     expect(html).toContain("Rollback");
     expect(html).toContain("UNKNOWN: ask the author");
+  });
+
+  it("does not repeat the band slug as the verdict explanation", () => {
+    const html = renderToStaticMarkup(<VerdictView report={fixture} />);
+    expect(html).not.toContain("<p class=\"mt-md text-text-secondary\">risky</p>");
+    expect(html).toContain("gaps");
+  });
+
+  it("does not claim seven dimensions when none were scored", () => {
+    const html = renderToStaticMarkup(
+      <RiskMapView report={{ ...fixture, dimensions: [] }} />,
+    );
+    expect(html).toContain("No dimensions were scored.");
+    expect(html).not.toContain("Seven dimensions, scored by code");
   });
 });

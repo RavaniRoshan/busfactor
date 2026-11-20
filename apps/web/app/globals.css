@@ -266,6 +266,16 @@
     --rw-warning: oklch(0.82 0.15 85);
     --rw-danger: oklch(0.62 0.21 25);
 
+    /* Theme utilities resolve at the usage site; remap them for this dark panel. */
+    --text-secondary: var(--rw-muted);
+    --text-tertiary: var(--rw-muted);
+    --border-secondary: var(--rw-border);
+    --muted: var(--rw-surface-raised);
+    --muted-foreground: var(--rw-muted);
+    --success: var(--rw-success);
+    --warning: var(--rw-warning);
+    --danger: var(--rw-danger);
+
     position: relative;
     width: 100%;
     max-width: var(--container-page);

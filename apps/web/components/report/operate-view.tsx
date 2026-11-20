@@ -1,14 +1,14 @@
 import { Card, CardPanel } from "../ui/card";
 import { parseOperateMd, type Report } from "../../lib/report-view";
 
-export function OperateView({ report }: { report: Report }) {
+export function OperateView({ report, slug }: { report: Report; slug: string }) {
   const sections = parseOperateMd(report.operateMd);
 
   return (
     <section aria-labelledby="rw-operate-title">
       <p className="rw-eyebrow">OPERATE.md</p>
       <h2 id="rw-operate-title" className="type-display mt-sm">
-        Operating notes
+        Operating {slug}
       </h2>
       <p className="mt-md text-text-secondary">
         Drafted from repository evidence. Anything the code cannot confirm is marked unknown.

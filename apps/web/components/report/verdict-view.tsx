@@ -2,14 +2,22 @@ import { Badge } from "../ui/badge";
 import { bandForScore, severityTone, type Report } from "../../lib/report-view";
 import { CiteChip } from "./cite-chip";
 
+const explanations: Record<string, string> = {
+  "Handoff-ready": "A newcomer can run this repository without a briefing.",
+  "Operable with a briefing": "A newcomer can run this with a short handoff from the author.",
+  Risky: "A newcomer is likely to hit gaps that only the author can close.",
+  "Only the author can run this": "This repository cannot be safely run without its author.",
+};
+
 export function VerdictView({ report }: { report: Report }) {
+  const band = bandForScore(report.score);
   return (
     <section aria-labelledby="rw-verdict-title">
       <p className="rw-eyebrow">OPERABILITY VERDICT</p>
       <h2 id="rw-verdict-title" className="type-display mt-sm">
-        {bandForScore(report.score)}
+        {band}
       </h2>
-      <p className="mt-md text-text-secondary">{report.verdict.replace(/-/g, " ")}</p>
+      <p className="mt-md text-text-secondary">{explanations[band]}</p>
       <p className="mt-xl flex items-baseline gap-sm">
         <span className="type-display tabular-nums">{report.score}</span>
         <span className="text-text-secondary">/ 100</span>

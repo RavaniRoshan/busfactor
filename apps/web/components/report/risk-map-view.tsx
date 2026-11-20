@@ -8,7 +8,7 @@ export function RiskMapView({ report }: { report: Report }) {
         Where a handoff breaks first
       </h2>
       <p className="mt-md text-text-secondary">
-        Seven dimensions, scored by code. Lower bars mark where a new operator is most likely to get stuck.
+        {report.dimensions.length} dimension{report.dimensions.length === 1 ? "" : "s"}, scored by code. Lower bars mark where a new operator is most likely to get stuck.
       </p>
 
       {report.dimensions.length === 0 ? (

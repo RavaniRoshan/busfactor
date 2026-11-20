@@ -33,6 +33,9 @@ describe("ReportWindow", () => {
     }
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('aria-pressed="true"');
+    expect(html).toContain('role="tabpanel"');
+    expect(html).toContain("abc123");
+    expect(html).toContain("0.1.1");
   });
 
   it("switches content by view prop", () => {
