@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-11-20 — Landing page ⇄ webapp navigation and redeploy
+
+- Decision: Keep the single Next.js app as both the landing page and the webapp; make navigation explicit in both directions instead of deploying the Figma Vite prototype as a second site.
+- Branch taken: Added a primary "Scan" link to the shared header, hero CTAs to `/scan` and `/docs`, a hosted-scan link in Quickstart, and return links on `/scan`, `/docs` and `/r/[slug]`. Added a source-level regression test for these links.
+- Why: The user asked for the landing page and main web app to be perfectly interconnected and both deployed on Vercel. One app with absolute routes gives real navigation and shareable URLs; a second Vite prototype would have no shared routing.
+- Evidence: `pnpm gate` pass (30 tests); build pass; local dev full flow POST /api/scan 200 → GET /r/:slug 200; production redeploy `dpl_EQkH433gM8oiN72Ly1H1YYxdw5qX` with all routes 200 and links present in HTML.
+- Scope note: `BusFactor Landing Page/` remains untouched. The production scan → report hop is still broken (in-memory store); see BLOCKERS.md. The local preview at `http://localhost:3000` completes the full flow because it runs in one process.
+
 ## 2026-11-20 — Vercel production deployment
 
 - Decision: Deploy the root `heir` Vercel project (monorepo build config) rather than the separate `apps/web` project.
