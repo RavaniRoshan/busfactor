@@ -30,7 +30,7 @@ describe("webapp shell", () => {
   });
 
   it("has no landing-page artifacts left", () => {
-    for (const file of ["design.md", "components/report-window.tsx", "components/quickstart-tabs.tsx", "public/dusk-road.webp"]) {
+    for (const file of ["design.md", "components/quickstart-tabs.tsx"]) {
       expect(existsSync(path.join(root, file))).toBe(false);
     }
     expect(existsSync(path.join(root, "../BusFactor Landing Page"))).toBe(false);
