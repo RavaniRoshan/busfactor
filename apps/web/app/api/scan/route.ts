@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-
-import { jobs, makeSlug, rateLimits, reportCache, reports, spend } from "@/lib/store";
+import { makeSlug, store } from "@/lib/store";
 
 export const maxDuration = 60;
 
@@ -24,24 +23,18 @@ export async function POST(request: Request) {
     return Response.json({ error: "target is required" }, { status: 400 });
   }
 
-  const ip = clientIp(request);
-  const limit = rateLimits.get(ip);
-  const currentDay = today();
-  if (limit === undefined || limit.day !== currentDay) {
-    rateLimits.set(ip, { day: currentDay, count: 1 });
-  } else if (limit.count >= 10) {
+  const allowed = await store.rateLimits.consume(clientIp(request), today(), 10);
+  if (!allowed) {
     return Response.json({ error: "rate limit exceeded" }, { status: 429 });
-  } else {
-    limit.count += 1;
   }
 
   const spendCap = Number(process.env.BUSFACTOR_DAILY_SPEND_CAP_USD ?? "10");
-  if (spend.usd >= spendCap) {
+  const currentSpend = await store.spend.get();
+  if (currentSpend.usd >= spendCap) {
     return Response.json({ error: "daily spend cap reached" }, { status: 503 });
   }
 
-  const cacheKey = rawTarget;
-  const cached = reportCache.get(cacheKey) as { report: unknown; slug: string } | undefined;
+  const cached = await store.reportCache.get(rawTarget);
   if (cached) {
     return Response.json({ id: randomUUID(), status: "complete", slug: cached.slug, report: cached.report, cached: true });
   }
@@ -55,16 +48,16 @@ export async function POST(request: Request) {
     const core = await import("../../../../../packages/core/dist/index.js" /*turbopackIgnore: true*/);
     const { report } = await core.scanTarget(target, {});
     const slug = makeSlug();
-    reports.set(slug, { slug, report, public: false });
-    reportCache.set(cacheKey, { slug, report });
-    spend.usd += Number((report as { meta?: { costUsd?: number } }).meta?.costUsd ?? 0);
+    await store.reports.set(slug, { slug, report, public: false });
+    await store.reportCache.set(rawTarget, { slug, report });
+    await store.spend.add(Number((report as { meta?: { costUsd?: number } }).meta?.costUsd ?? 0));
     const id = randomUUID();
-    jobs.set(id, { id, status: "complete", slug, report, public: false });
+    await store.jobs.set(id, { id, status: "complete", slug, report, public: false });
     return Response.json({ id, status: "complete", slug, report });
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : String(error) },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

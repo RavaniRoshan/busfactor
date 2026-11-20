@@ -1,9 +1,13 @@
 # fix-6 — Persist scans and reports outside a single serverless instance
 
+STATUS (20 Nov 2026): steps 1–5 are implemented in `apps/web/lib/store.ts` and
+all callers. Local gate passes (35 tests); local scan → report → badge returns 200.
+Only the credential and the production verification remain.
+
 ```text
-PRECONDITION: Roshan has chosen a Postgres provider (Neon or Supabase) and set
-DATABASE_URL on the Vercel project. Do not start without it — the adapter target
-is otherwise unknown. See BLOCKERS.md (2026-11-20).
+PRECONDITION: Roshan has chosen Neon and must set DATABASE_URL on the Vercel
+project (Vercel Marketplace integration or copied connection string). See
+BLOCKERS.md (2026-11-20).
 
 READS: PDR sections 8 (data model, endpoints) and 13 (Gate C); AGENTS.md section 11.
 BLOCKED BY: DATABASE_URL (human credential + provider decision).

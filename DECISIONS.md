@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-11-20 — Neon persistence adapter
+
+- Decision: Use Neon as the Postgres provider and replace the in-memory Maps with an async `store` interface.
+- Branch taken: `@neondatabase/serverless` `Pool` with `poolQueryViaFetch`, a single `busfactor_store` table, atomic SQL upserts for rate limits and spend, and a memory fallback when `DATABASE_URL` is absent so local dev and tests still work.
+- Why: Roshan chose Neon; the Vercel Marketplace integration injects `DATABASE_URL` automatically. Memory-only state cannot survive separate serverless instances.
+- Scope: all 10 callers updated to `await store.*`; added 3 store tests. `pnpm gate` passes (35 tests); production build passes; local scan → report → badge verified 200.
+- Still blocked: `DATABASE_URL` is not set on Vercel (`vercel env ls` is empty). Deploying before it changes nothing, so deployment is deferred until the secret exists.
+
 ## 2026-11-20 — All landing-page artifacts removed
 
 - Decision: Remove the landing page entirely from `apps/web` and from the repository. It will be built in a separate repo on another day.

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { reports } from "@/lib/store";
+import { store } from "@/lib/store";
 import { PageFrame } from "@/components/site-chrome";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -37,7 +37,7 @@ function severityVariant(severity: string): "danger" | "warning" | "secondary" {
 
 export default async function ReportPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const stored = reports.get(slug);
+  const stored = await store.reports.get(slug);
   if (!stored) notFound();
   const report = stored.report as Report;
 

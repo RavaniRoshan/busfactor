@@ -9,7 +9,8 @@ gates:
   web_deploy: pass (production, dpl_5mVHWV4GvK5Ahsq8kn7qsU6xFybQ, 20 Nov 2026)
   web_navigation: pass (app shell: / → /scan ↔ /docs ↔ /r/:slug)
   web_landing_removed: pass (no landing artifacts in webapp or repo)
-  web_scan_e2e: fail (local pass, production 404: in-memory store lost across serverless instances; see BLOCKERS.md)
+  web_scan_e2e: fail (local pass, production still 404 until DATABASE_URL is set; see BLOCKERS.md)
+  web_persistence_code: pass (Neon adapter + async store API, 35 tests)
 env:
   pkg_manager: pnpm@10.15.0 (activated via corepack)
   node: v24.21.0

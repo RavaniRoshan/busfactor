@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { jobs, reports } from "@/lib/store";
+import { store } from "@/lib/store";
 import { Badge } from "@/components/ui/badge";
 
 async function readJsonArray(filePath: string): Promise<unknown[]> {
@@ -29,11 +29,15 @@ export default async function AdminMetricsPage({
     );
   }
 
-  const waitlist = await readJsonArray(path.join(process.cwd(), "data", "waitlist.json"));
-  const feedback = await readJsonArray(path.join(process.cwd(), "data", "feedback.json"));
+  const [waitlist, feedback, jobCount, reportCount] = await Promise.all([
+    readJsonArray(path.join(process.cwd(), "data", "waitlist.json")),
+    readJsonArray(path.join(process.cwd(), "data", "feedback.json")),
+    store.jobs.count(),
+    store.reports.count(),
+  ]);
   const metrics = [
-    { label: "Jobs", value: jobs.size },
-    { label: "Reports", value: reports.size },
+    { label: "Jobs", value: jobCount },
+    { label: "Reports", value: reportCount },
     { label: "Waitlist emails", value: waitlist.length },
     { label: "Feedback entries", value: feedback.length },
   ];
