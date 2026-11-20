@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-11-20 — All landing-page artifacts removed
+
+- Decision: Remove the landing page entirely from `apps/web` and from the repository. It will be built in a separate repo on another day.
+- Branch taken: `/` now redirects to `/scan`; deleted the Figma Make source directory, the extracted design doc, the showcase/report-window and quickstart components, the dusk-road image, landing-only CSS tokens, the ESLint ignore, and the old landing-specific tests. Header/footer now contain only Scan and Docs.
+- Why: The user decided the landing page belongs in its own repo. Keeping a second, prototyped landing surface inside the product app was confusing and could not share routing.
+- Supersedes: the two earlier 2026-11-20 entries that added the landing page and wired it into this app. Those remain in the log as history, not as current state.
+- Scope note: Product-level documents (PDR, PROMPTS, AGENTS) still mention a landing page as a Gate C deliverable; that is a product requirement, not an implementation artifact in this repo.
+
 ## 2026-11-20 — Landing page ⇄ webapp navigation and redeploy
 
 - Decision: Keep the single Next.js app as both the landing page and the webapp; make navigation explicit in both directions instead of deploying the Figma Vite prototype as a second site.

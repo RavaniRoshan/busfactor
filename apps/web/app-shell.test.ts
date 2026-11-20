@@ -12,25 +12,34 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
-describe("web design system", () => {
-  it("defines the extracted design tokens and self-hosted font variables", () => {
+describe("webapp shell", () => {
+  it("defines the tokens and self-hosted font variables", () => {
     const css = readFileSync(path.join(root, "app/globals.css"), "utf8");
     expect(css).toContain("--spacing-section");
-    expect(css).toContain("--container-window");
+    expect(css).toContain("--container-page");
     expect(css).toContain("--radius-corner-lg");
     expect(css).toContain("--color-brand-primary");
     expect(css).toContain("var(--font-instrument-sans)");
     expect(css).toContain("var(--font-jetbrains-mono)");
   });
 
-  it("ships the showcase image locally", () => {
-    expect(existsSync(path.join(root, "public/dusk-road.webp"))).toBe(true);
+  it("routes the root into the app", () => {
+    const page = readFileSync(path.join(root, "app/page.tsx"), "utf8");
+    expect(page).toContain('redirect("/scan")');
+    expect(page).not.toMatch(/landing|figma|dusk/i);
   });
 
-  it("never imports Figma-proprietary components into the webapp", () => {
+  it("has no landing-page artifacts left", () => {
+    for (const file of ["design.md", "components/report-window.tsx", "components/quickstart-tabs.tsx", "public/dusk-road.webp"]) {
+      expect(existsSync(path.join(root, file))).toBe(false);
+    }
+    expect(existsSync(path.join(root, "../BusFactor Landing Page"))).toBe(false);
+  });
+
+  it("keeps Figma and landing references out of webapp source", () => {
     const files = [...sourceFiles(path.join(root, "app")), ...sourceFiles(path.join(root, "components"))];
     for (const file of files) {
-      expect(readFileSync(file, "utf8")).not.toMatch(/@figma\/astraui/);
+      expect(readFileSync(file, "utf8")).not.toMatch(/@figma|astraui|dusk-road|landing page/i);
     }
   });
 
@@ -39,8 +48,7 @@ describe("web design system", () => {
     expect(page).toContain("robots: { index: false, follow: false }");
   });
 
-  it("links the landing page and the webapp routes in both directions", () => {
-    const home = readFileSync(path.join(root, "app/page.tsx"), "utf8");
+  it("links the app routes together", () => {
     const chrome = readFileSync(path.join(root, "components/site-chrome.tsx"), "utf8");
     const scan = readFileSync(path.join(root, "app/scan/page.tsx"), "utf8");
     const docs = readFileSync(path.join(root, "app/docs/page.tsx"), "utf8");
@@ -48,8 +56,7 @@ describe("web design system", () => {
 
     expect(chrome).toContain('href: "/scan"');
     expect(chrome).toContain('href: "/docs"');
-    expect(home).toContain('href="/scan"');
-    expect(home).toContain('href="/docs"');
+    expect(chrome).not.toContain('/#');
     expect(scan).toContain('href="/docs"');
     expect(docs).toContain('href="/scan"');
     expect(report).toContain('href="/scan"');

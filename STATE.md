@@ -6,10 +6,9 @@ gates:
   url_ingest: stale
   llm_live: stale
   gate_a: not_started
-  web_design_system: pass
-  web_landing_build: pass
   web_deploy: pass (production, dpl_EQkH433gM8oiN72Ly1H1YYxdw5qX, 20 Nov 2026)
-  web_navigation: pass (landing ↔ scan ↔ docs ↔ report, verified local + production)
+  web_navigation: pass (app shell: / → /scan ↔ /docs ↔ /r/:slug)
+  web_landing_removed: pass (no landing artifacts in webapp or repo)
   web_scan_e2e: fail (local pass, production 404: in-memory store lost across serverless instances; see BLOCKERS.md)
 env:
   pkg_manager: pnpm@10.15.0 (activated via corepack)

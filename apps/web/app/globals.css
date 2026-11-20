@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Static scales extracted from the read-only Figma reference. See design.md. */
+/* Static scales for the app shell. */
 @theme {
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
@@ -15,9 +15,6 @@
   --spacing-3xl: 4rem;
   --spacing-4xl: 6rem;
   --spacing-section: 10rem;
-  --spacing-visual: 14rem;
-  --spacing-footer: 28rem;
-  --spacing-report: 44rem;
 
   --radius-corner-sm: 0.25rem;
   --radius-corner-md: 0.5rem;
@@ -27,7 +24,6 @@
   --container-copy: 48rem;
   --container-article: 56rem;
   --container-page: 92rem;
-  --container-window: 96rem;
 }
 
 @theme inline {
@@ -71,7 +67,6 @@
   --color-surface-bg: var(--surface-bg);
   --color-surface-secondary-bg: var(--surface-secondary-bg);
   --color-on-brand: var(--on-brand);
-  --color-modal-scrim: var(--modal-scrim);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -115,7 +110,6 @@
   --success: oklch(0.68 0.15 150);
   --warning: oklch(0.75 0.14 75);
   --danger: oklch(0.62 0.2 25);
-  --modal-scrim: oklch(0.2 0.02 259 / 65%);
 
   --background: var(--brand-tertiary);
   --foreground: var(--text-primary);
@@ -172,7 +166,6 @@
   --success: oklch(0.75 0.14 150);
   --warning: oklch(0.82 0.13 75);
   --danger: oklch(0.7 0.18 25);
-  --modal-scrim: oklch(0 0 0 / 70%);
 
   --sidebar: var(--surface-secondary-bg);
   --sidebar-foreground: var(--text-primary);

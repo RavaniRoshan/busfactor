@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
@@ -6,16 +5,13 @@ import { cn } from "cn";
 
 const navItems: { label: string; href: string; primary?: boolean }[] = [
   { label: "Scan", href: "/scan", primary: true },
-  { label: "Quickstart", href: "/#quickstart" },
-  { label: "CLI", href: "/#cli" },
-  { label: "Limits", href: "/#limits" },
   { label: "Docs", href: "/docs" },
 ];
 
 export function SiteHeader() {
   return (
     <header className="mx-auto flex w-full max-w-page items-center justify-between gap-lg px-xl py-xl md:px-2xl">
-      <a href="/" className="rounded-corner-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50" aria-label="BusFactor home">
+      <a href="/scan" className="rounded-corner-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50" aria-label="BusFactor app home">
         <Logo />
       </a>
       <div className="flex items-center gap-xs">
@@ -43,35 +39,31 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   return (
-    <footer className="relative isolate mt-4xl overflow-hidden md:mt-section">
-      <Image src="/dusk-road.webp" alt="" fill sizes="100vw" className="-z-10 object-cover object-bottom" />
-      <div className="absolute inset-0 -z-10 bg-linear-to-t from-modal-scrim to-transparent" />
-      <div className="mx-auto flex min-h-footer w-full max-w-page flex-col justify-end px-xl pb-2xl md:px-2xl">
-        <div className="flex flex-col gap-lg sm:flex-row sm:items-center sm:justify-between">
-          <a href="/" className="rounded-corner-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50" aria-label="BusFactor home">
-            <Logo className="text-on-brand" />
+    <footer className="mx-auto mt-4xl w-full max-w-page border-t border-border-secondary px-xl py-2xl md:px-2xl">
+      <div className="flex flex-col gap-lg sm:flex-row sm:items-center sm:justify-between">
+        <a href="/scan" className="rounded-corner-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50" aria-label="BusFactor app home">
+          <Logo />
+        </a>
+        <nav aria-label="Footer" className="flex flex-wrap items-center gap-xs">
+          {navItems.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="rounded-corner-md px-md py-sm text-label-sm text-text-secondary outline-none hover:text-text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              {item.label}
+            </a>
+          ))}
+          <a href="/terms" className="rounded-corner-md px-md py-sm text-label-sm text-text-secondary outline-none hover:text-text-primary focus-visible:ring-3 focus-visible:ring-ring/50">
+            Terms
           </a>
-          <nav aria-label="Footer" className="flex flex-wrap items-center gap-xs">
-            {navItems.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="rounded-corner-md px-md py-sm text-label-sm text-on-brand outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                {item.label}
-              </a>
-            ))}
-            <a href="/terms" className="rounded-corner-md px-md py-sm text-label-sm text-on-brand outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50">
-              Terms
-            </a>
-            <a href="/privacy" className="rounded-corner-md px-md py-sm text-label-sm text-on-brand outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50">
-              Privacy
-            </a>
-            <a href="/removal" className="rounded-corner-md px-md py-sm text-label-sm text-on-brand outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50">
-              Removal
-            </a>
-          </nav>
-        </div>
+          <a href="/privacy" className="rounded-corner-md px-md py-sm text-label-sm text-text-secondary outline-none hover:text-text-primary focus-visible:ring-3 focus-visible:ring-ring/50">
+            Privacy
+          </a>
+          <a href="/removal" className="rounded-corner-md px-md py-sm text-label-sm text-text-secondary outline-none hover:text-text-primary focus-visible:ring-3 focus-visible:ring-ring/50">
+            Removal
+          </a>
+        </nav>
       </div>
     </footer>
   );

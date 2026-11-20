@@ -3,7 +3,7 @@
 | Item | Status | Evidence |
 | --- | --- | --- |
 | 10+ seed reports live | NO | Only synthetic and external scan artifacts exist; no public reports published. |
-| Landing page and docs live | GO | Deployed to Vercel production `https://heir-weld.vercel.app` (deployment `dpl_EQkH433gM8oiN72Ly1H1YYxdw5qX`, 20 Nov 2026). `/`, `/scan`, `/docs`, `/terms`, `/privacy`, `/removal` all return 200 with the rebuilt UI and two-way navigation (landing → scan/docs, scan → docs, docs → scan, report → home/scan/docs). |
+| Landing page and docs live | PARTIAL | Landing page intentionally removed from this webapp and repository; it will live in a separate repo. Docs are live at `/docs` on Vercel production `https://heir-weld.vercel.app`. |
 | Scan error rate under 3% | NO | Live deployed scan returned 200, but the resulting report URL 404s across serverless instances (in-memory store). See BLOCKERS.md and `docs/prompts/fix-6.md`. |
 | Cost per scan inside cap | PARTIAL | Mock runs cost $0; live LLM cost not measured. |
 | Kill switch tested | GO | `BUSFACTOR_KILL_SWITCH=1` returns 503. |
