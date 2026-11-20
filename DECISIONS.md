@@ -1,5 +1,14 @@
 # Decisions
 
+## 2026-11-20 — Web rebuild (explicit override of P2.5 / Gate A)
+
+- Decision: Rebuild the `apps/web` UI with shadcn/ui on Base UI (`base-nova`) using a design system extracted from the read-only Figma landing page.
+- Branch taken: `research/ui-component-libraries.md` (wide research + adversarial verification) → `apps/web/design.md` → token/component implementation in `apps/web` only.
+- Why: The user explicitly asked for the webapp rebuild and confirmed the Gate-A override, matching the earlier P2.4 override pattern. Gate A remains human-controlled and unvalidated; no gate was declared passed.
+- Alternatives rejected: Open Shadcn Blocks (no licence grant, no source repo, competitor CDN assets), AI SDK Agents (paid, AI-pattern catalogue), porting the Figma Vite app itself (user said leave it untouched). Space UI Pro components rejected; free MIT primitives only, with per-component licence check.
+- Scope note: The Figma kit `@figma/astraui` is not installed locally, so exact hex values were unrecoverable; token names and scale formulas were extracted, and concrete OKLCH values were chosen and recorded in `apps/web/design.md` §3.
+- Gate evidence: `pnpm gate` passed (typecheck, lint, 25 tests); `pnpm --filter @busfactor/web build` passed (12 static pages generated).
+
 ## 2026-11-20 — P2.4 (override)
 
 - Decision: Implement the MCP server and handoff skill ahead of Gate A at the user's request.

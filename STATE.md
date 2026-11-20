@@ -1,11 +1,13 @@
 phase: MVP
-last_prompt: P3.2 @ d58b50f
+last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ uncommitted
 status: PASS
 gates:
   p0_bootstrap: pass
   url_ingest: stale
   llm_live: stale
   gate_a: not_started
+  web_design_system: pass
+  web_landing_build: pass
 env:
   pkg_manager: pnpm@10.15.0 (activated via corepack)
   node: v24.21.0
@@ -19,4 +21,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: []
-next: External launch items (npm publish, deploy, legal review, 10+ seed reports) then P3.0
+next: Restyle the remaining webapp routes (/scan, /r/[slug], /docs, legal) to the same design system, then re-run gate and build

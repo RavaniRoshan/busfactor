@@ -11,6 +11,7 @@ export default tseslint.config(
       "**/.next/**",
       "fixtures/**",
       "docs/**",
+      "BusFactor Landing Page/**",
     ],
   },
   js.configs.recommended,
