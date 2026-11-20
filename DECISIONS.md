@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-11-20 — P1.7
+
+- Decision: Implement the CLI as a thin wrapper over `scanTarget`, write Markdown, JSON, OPERATE.md, and author questions, and use exit code 2 for `--fail-under`.
+- Branch taken: Build core and CLI to `dist` before typechecking, because the CLI imports the compiled package.
+- Why: This keeps the CLI free of analysis logic and makes the engine reusable by the future web, skill, and MCP surfaces.
+- Gate: P1.7 passes. Gate A remains human-controlled and is not started.
+
+
 ## 2026-11-20 — P0.1
 
 - Decision: Use a pnpm workspace with `packages/core`, `packages/cli`, and an `apps/web` shell.
