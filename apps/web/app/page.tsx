@@ -32,7 +32,8 @@ export default function Home() {
       </ol>
 
       <p>
-        <a href="/scan">Scan a repository</a> · <a href="/docs">Documentation</a>
+        <a href="/scan">Scan a repository</a> · <a href="/docs">Documentation</a> · <a href="/terms">Terms</a> ·{" "}
+        <a href="/privacy">Privacy</a> · <a href="/removal">Removal</a>
       </p>
 
       <h2>Scoring</h2>
