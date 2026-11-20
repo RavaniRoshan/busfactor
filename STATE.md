@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: P1.1 @ e01e6d9
+last_prompt: P1.2 @ 14e56c9
 status: PASS
 gates:
   p0_bootstrap: pass
@@ -19,4 +19,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: []
-next: P1.2 because the core contracts and schema tests pass
+next: P1.3 because ingestion and snapshot guards pass

@@ -1,0 +1,11 @@
+{
+  "name": "clean-demo",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "3.24.2"
+  }
+}
