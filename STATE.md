@@ -1,6 +1,6 @@
 phase: MVP
 last_prompt: P1.7 @ b4cfaa7
-status: PASS
+status: BLOCKED
 gates:
   p0_bootstrap: pass
   url_ingest: stale
