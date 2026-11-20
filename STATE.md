@@ -4,8 +4,8 @@ status: PARTIAL
 gates:
   p0_bootstrap: pass
   url_ingest: stale
-  llm_live: stale
-  gate_a: not_started
+  llm_live: pass (Groq free tier, live scan valid, costUsd 0)
+  gate_a: not_started (posts drafted in docs/validation.md; not published)
   web_deploy: pass (production, dpl_8jCa5D8jpDF6bsLTF1Mrkn939P2V, 20 Nov 2026; remote main synced)
   web_navigation: pass (app shell: / → /scan ↔ /docs ↔ /r/:slug)
   web_landing_removed: pass (no landing artifacts in webapp or repo)
@@ -19,7 +19,7 @@ env:
   node: v24.21.0
   deploy_target: Vercel project heir — https://heir-weld.vercel.app
   db: Neon Postgres (Vercel integration, DATABASE_URL secret; pooled connection)
-  llm_key_present: false (Groq provider implemented; GROQ_API_KEY not set)
+  llm_key_present: true (GROQ_API_KEY hidden Vercel secret; never in repo/logs)
 measured:
   scan_p50_s: null
   cost_per_scan_usd: null
@@ -27,4 +27,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: [BUSFACTOR_ADMIN_TOKEN not set on Vercel — /admin/metrics shows Unauthorized]
-next: Set GROQ_API_KEY on Vercel, set BUSFACTOR_ADMIN_TOKEN, supply operator legal identity/jurisdiction, then run Gate A. Gates A/B/C are not passed.
+next: Human-only: publish Gate A posts and collect 5 stranger requests, collect Gate B feedback, set BUSFACTOR_ADMIN_TOKEN and jurisdiction, log in to npm, supply 10 consented seed repos. Agent-side work is complete.
