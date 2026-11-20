@@ -48,6 +48,13 @@ describe("webapp shell", () => {
     expect(page).toContain("robots: { index: false, follow: false }");
   });
 
+  it("allows eval only in the development CSP", () => {
+    const config = readFileSync(path.join(root, "next.config.mjs"), "utf8");
+    expect(config).toContain('process.env.NODE_ENV === "development"');
+    expect(config).toContain("'unsafe-eval'");
+    expect(config).toContain("isDev ?");
+  });
+
   it("links the app routes together", () => {
     const chrome = readFileSync(path.join(root, "components/site-chrome.tsx"), "utf8");
     const scan = readFileSync(path.join(root, "app/scan/page.tsx"), "utf8");
