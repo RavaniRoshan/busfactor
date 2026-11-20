@@ -59,9 +59,6 @@ importers:
       '@ravaniroshan/busfactor-core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@usespaceui/squircle':
-        specifier: ^0.1.2
-        version: 0.1.2
       '@vercel/analytics':
         specifier: ^2.0.1
         version: 2.0.1(next@16.4.6(@babel/core@7.29.13)(@types/node@22.20.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
@@ -1512,10 +1509,6 @@ packages:
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [win32]
-
-  '@usespaceui/squircle@0.1.2':
-    resolution: {integrity: sha512-zUb91ozbVX/uvnxb46O8Bt26KOaL2QSH8jmJ5A1qfyIKL1kfA+ITNiAHXh9yLGwBFtQlYBN/Bm+KLoI1Lzsa0w==}
-    engines: {node: '>=18.0.0'}
 
   '@vercel/analytics@2.0.1':
     resolution: {integrity: sha512-MTQG6V9qQrt1tsDeF+2Uoo5aPjqbVPys1xvnIftXSJYG2SrwXRHnqEvVoYID7BTruDz4lCd2Z7rM1BdkUehk2g==}
@@ -4166,8 +4159,6 @@ snapshots:
 
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
-
-  '@usespaceui/squircle@0.1.2': {}
 
   '@vercel/analytics@2.0.1(next@16.4.6(@babel/core@7.29.13)(@types/node@22.20.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)':
     optionalDependencies:

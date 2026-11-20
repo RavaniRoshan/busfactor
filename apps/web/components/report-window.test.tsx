@@ -36,6 +36,8 @@ describe("ReportWindow", () => {
     expect(html).toContain('role="tabpanel"');
     expect(html).toContain("abc123");
     expect(html).toContain("0.1.1");
+    expect(html).toContain('aria-labelledby="rw-tab-verdict"');
+    expect(html.match(/tabindex="0"/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
   });
 
   it("switches content by view prop", () => {

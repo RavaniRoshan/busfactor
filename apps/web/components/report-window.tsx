@@ -56,6 +56,7 @@ export function ReportWindow({ report, slug, view }: { report: Report; slug: str
           {views.map(({ id, label, icon: Icon }) => (
             <TabsTab
               key={id}
+              id={`rw-tab-${id}`}
               value={id}
               tabIndex={view === id ? 0 : -1}
               className={`rw-nav-link ${view === id ? "rw-nav-active" : ""}`}
@@ -68,7 +69,7 @@ export function ReportWindow({ report, slug, view }: { report: Report; slug: str
           ))}
         </TabsList>
 
-        <TabsPanel value={view} className="relative min-w-0">
+        <TabsPanel value={view} aria-labelledby={`rw-tab-${view}`} className="relative min-w-0">
           <div className="rw-content">
             <View report={report} slug={slug} />
           </div>
@@ -80,6 +81,7 @@ export function ReportWindow({ report, slug, view }: { report: Report; slug: str
                   href={hrefFor(slug, id)}
                   aria-label={`Show ${label}`}
                   aria-pressed={view === id}
+                  tabIndex={view === id ? 0 : -1}
                   role="button"
                   className={`rw-toolbar-link ${view === id ? "rw-toolbar-active" : ""}`}
                 >
