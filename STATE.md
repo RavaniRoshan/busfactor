@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: P0.1 @ pending-commit
+last_prompt: P0.1 @ b6c3045
 status: PASS
 gates:
   p0_bootstrap: pass
