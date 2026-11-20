@@ -118,6 +118,13 @@ export type SnapshotData = z.infer<typeof snapshotSchema>;
 
 export interface Snapshot extends SnapshotData {
   readFile(path: string): Promise<string>;
+  dispose?(): Promise<void>;
+}
+
+export interface SnapshotOptions {
+  fileCap?: number;
+  sizeCapBytes?: number;
+  fetchImpl?: typeof fetch;
 }
 
 export const verdictSchema = z.enum([
