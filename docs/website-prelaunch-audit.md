@@ -99,6 +99,17 @@ Final clean run: **15 passed, 5 failed**. All five failures are genuine product 
 - **AUD-03 (confirmed) — analytics before consent.** The harness observed `GET /_vercel/insights/script.js` on a clean `/scan` load with no consent UI (`tests/network.spec.ts:3`).
 - AUD-05's overlap remains a real visual defect even though `overflowlint` alone did not flag it; the custom geometry assertion now pins it. OverflowLint's blind spots are documented in `tests/README.md`.
 
+## Remediation verification (20 Nov 2026)
+
+All five deterministic defects were fixed and the harness re-run:
+
+- cache-hit scans now persist a job row before responding (`apps/web/app/api/scan/route.ts`);
+- active nav text uses a lighter scoped token, measured axe contrast now passes 4.5:1;
+- `.rw-body` forces `display: grid !important` over the Space UI `flex` utility, the provenance line is hidden at ≤640px, and cards are forced to the dark surface;
+- Vercel Web Analytics was removed from `app/layout.tsx`, its dependency and CSP origin, so no tracker loads before consent.
+
+`pnpm verify` now reports **20 passed, 0 failed**. `pnpm gate` passes 64 unit tests. These fixes are verified deterministically; they are not a legal certification.
+
 ## Tests run
 
 - `pnpm gate` — PASS (25 core + 35 web tests) at commit `1b38e2a`, re-run after final docs-only commit.

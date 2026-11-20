@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-11-20 — Groq backend and verified defect fixes
+
+- Decision: Use Groq as the hosted LLM backend and fix every deterministic verification finding before invoking any gate.
+- Branch taken: `GroqProvider` uses the OpenAI-compatible endpoint `https://api.groq.com/openai/v1/chat/completions` with bearer auth and default model `openai/gpt-oss-120b`; `createDefaultProvider()` prefers `GROQ_API_KEY`, then `ANTHROPIC_API_KEY`, then the heuristic fallback. Four unit tests cover headers, model override, error handling and selection.
+- Why: Groq's OpenAI-compatible API needs no new SDK and keeps the provider interface unchanged; no key is present in this environment, so live LLM gates remain `stale` rather than fabricated.
+- Fixes verified: cached scans persist jobs; report contrast passes 4.5:1; mobile report stacks and header no longer clips; Space UI cards use the dark surface; Vercel Analytics removed entirely so no tracker loads pre-consent.
+- Evidence: `pnpm gate` 64 tests pass; `pnpm verify` 20/20 pass; audit report updated. Gates A/B/C and legal identity are still human-controlled and were not declared passed.
+
 ## 2026-11-20 — Autonomous verification harness
 
 - Decision: Build a deterministic local verification harness before any further UI improvements, from four research rounds plus adversarial verification (`research/autonomous-ui-verification-tooling.md`).

@@ -13,13 +13,13 @@ gates:
   web_persistence_code: pass (Neon adapter + async store API, 35 tests)
   report_workspace: pass (four-view dark workspace, no decorative backdrop, Space UI MIT primitives, 60 tests, fresh review Clean/approve)
   operator_dashboard: pass (real store data, 60 tests, token-gated; production token not set)
-  deterministic_verify: fail (pnpm verify: 15 pass / 5 genuine product defects; see docs/website-prelaunch-audit.md)
+  deterministic_verify: pass (pnpm verify 20/20, 0 failures; 5 prior defects fixed)
 env:
   pkg_manager: pnpm@10.15.0 (activated via corepack)
   node: v24.21.0
   deploy_target: Vercel project heir — https://heir-weld.vercel.app
   db: Neon Postgres (Vercel integration, DATABASE_URL secret; pooled connection)
-  llm_key_present: false
+  llm_key_present: false (Groq provider implemented; GROQ_API_KEY not set)
 measured:
   scan_p50_s: null
   cost_per_scan_usd: null
@@ -27,4 +27,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: [BUSFACTOR_ADMIN_TOKEN not set on Vercel — /admin/metrics shows Unauthorized]
-next: Fix the 5 deterministic verification findings (cache-hit job, nav contrast 1.07:1, mobile stacking/header clipping, analytics before consent), re-run pnpm verify, then Gate A. Gates A/B/C are not passed.
+next: Set GROQ_API_KEY on Vercel, set BUSFACTOR_ADMIN_TOKEN, supply operator legal identity/jurisdiction, then run Gate A. Gates A/B/C are not passed.

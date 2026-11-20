@@ -14,3 +14,4 @@ export * from "./scan.js";
 export * from "./operate.js";
 export * from "./render.js";
 export * from "./llm/mock.js";
+export * from "./llm/groq.js";

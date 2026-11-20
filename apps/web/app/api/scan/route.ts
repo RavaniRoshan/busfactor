@@ -36,7 +36,22 @@ export async function POST(request: Request) {
 
   const cached = await store.reportCache.get(rawTarget);
   if (cached) {
-    return Response.json({ id: randomUUID(), status: "complete", slug: cached.slug, report: cached.report, cached: true });
+    // A cache hit still needs a queryable job: the scan form polls /api/scan/:id.
+    const cachedId = randomUUID();
+    await store.jobs.set(cachedId, {
+      id: cachedId,
+      status: "complete",
+      slug: cached.slug,
+      report: cached.report,
+      public: false,
+    });
+    return Response.json({
+      id: cachedId,
+      status: "complete",
+      slug: cached.slug,
+      report: cached.report,
+      cached: true,
+    });
   }
 
   const nodePath = await import("node:path");

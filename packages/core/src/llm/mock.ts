@@ -1,4 +1,5 @@
 import { AnthropicProvider } from "./anthropic.js";
+import { GroqProvider } from "./groq.js";
 import type { LLMProvider, LLMRequest } from "./provider.js";
 
 export class MockProvider implements LLMProvider {
@@ -40,9 +41,13 @@ export class HeuristicProvider implements LLMProvider {
 }
 
 export function createDefaultProvider(): LLMProvider {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (apiKey !== undefined && apiKey !== "") {
-    return new AnthropicProvider({ apiKey });
+  const groqKey = process.env.GROQ_API_KEY;
+  if (groqKey !== undefined && groqKey !== "") {
+    return new GroqProvider({ apiKey: groqKey });
+  }
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (anthropicKey !== undefined && anthropicKey !== "") {
+    return new AnthropicProvider({ apiKey: anthropicKey });
   }
   return new HeuristicProvider();
 }

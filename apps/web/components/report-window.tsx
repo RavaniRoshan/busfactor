@@ -45,7 +45,7 @@ export function ReportWindow({ report, slug, view }: { report: Report; slug: str
           <span className="text-label-sm text-text-secondary">
             Score <span className="font-mono tabular-nums">{report.score}/100</span>
           </span>
-          <span className="font-mono text-[0.625rem] text-text-tertiary">
+          <span className="rw-provenance font-mono text-[0.625rem] text-text-tertiary">
             SHA {report.meta.sha} · Engine {report.meta.engineVersion} · Rubric {report.meta.rubricVersion}
           </span>
         </div>
