@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: P1.3 @ 5c158cf
+last_prompt: P1.4 @ 5124004
 status: PASS
 gates:
   p0_bootstrap: pass
@@ -19,4 +19,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: []
-next: P1.4 because deterministic scanners pass on clean and bad fixtures
+next: P1.5 because scoring is deterministic and fixtures order correctly

@@ -1,0 +1,42 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`OPERATE.md and author questions > matches the golden output for the clean fixture 1`] = `
+"# OPERATE.md
+
+## What it is
+
+Unknown from automated heuristics.
+
+## Run locally
+
+- \`npm install\`
+- \`npm run start\`
+- \`npm run test\`
+- \`Run \`npm install\`, then \`npm start\`. The service listens on PORT 3000.\`
+
+## Env vars
+
+- \`PORT\` — documented
+
+## Deploy
+
+UNKNOWN: ask the author how this service is deployed.
+
+## First-hour debugging
+
+- Check application logs and the documented health endpoint.
+- Verify all required environment variables are set.
+
+## Rollback
+
+UNKNOWN: ask the author for the rollback procedure.
+
+## Known risks
+
+No high or critical risks were detected.
+
+## Things only the author knows
+
+No author-only questions were identified.
+"
+`;
