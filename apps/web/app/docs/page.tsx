@@ -1,6 +1,7 @@
 import { CopyButton } from "@/components/copy-button";
 import { PageFrame, PageIntro } from "@/components/site-chrome";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata = {
   title: "Documentation — BusFactor",
@@ -36,6 +37,11 @@ export default function DocsPage() {
   return (
     <PageFrame>
       <PageIntro eyebrow="Reference" title="BusFactor documentation" text="Everything you need to run a scan and read the result." />
+      <div className="mt-xl flex justify-center">
+        <a href="/scan" className={buttonVariants({ variant: "default" })}>
+          Scan a repository
+        </a>
+      </div>
       <div className="mx-auto mt-3xl grid max-w-article gap-xl">
         {sections.map((section) => (
           <section key={section.id} id={section.id} aria-labelledby={`${section.id}-title`} className="scroll-mt-xl rounded-corner-lg border border-border-secondary bg-surface-secondary-bg p-xl">

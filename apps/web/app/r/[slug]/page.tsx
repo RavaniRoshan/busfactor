@@ -121,6 +121,12 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
             <a href={`/badge/${slug}.svg`} className={buttonVariants({ variant: "outline" })}>Badge</a>
           </section>
 
+          <section aria-label="More actions" className="flex flex-wrap gap-sm">
+            <a href="/scan" className={buttonVariants({ variant: "default" })}>Scan another repository</a>
+            <a href="/docs" className={buttonVariants({ variant: "outline" })}>Documentation</a>
+            <a href="/" className={buttonVariants({ variant: "outline" })}>Back to home</a>
+          </section>
+
           <FeedbackWidget slug={slug} />
         </div>
       </div>

@@ -21,6 +21,7 @@ import { ReportWindow } from "@/components/report-window";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { WaitlistForm } from "@/components/waitlist-form";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "cn";
 
 const LOCAL_COMMAND = "npx busfactor scan ./my-repo";
@@ -76,6 +77,14 @@ function Hero() {
       <div className="mt-2xl flex flex-col items-center gap-md">
         <CopyButton text={LOCAL_COMMAND}>{LOCAL_COMMAND}</CopyButton>
         <p className="text-xs text-text-secondary">Local paths or public GitHub URLs. No repository code is executed.</p>
+      </div>
+      <div className="mt-xl flex flex-wrap items-center justify-center gap-md">
+        <a href="/scan" className={buttonVariants({ variant: "outline" })}>
+          Scan a repository
+        </a>
+        <a href="/docs" className="text-label-sm text-text-secondary underline-offset-4 hover:underline hover:text-text-primary">
+          Read the docs
+        </a>
       </div>
     </section>
   );
@@ -196,6 +205,13 @@ function Quickstart() {
     <Section id="quickstart" labelledBy="quickstart-title">
       <SectionHeader id="quickstart-title" title="Start with one command" text="Point it at a folder on your machine, or at any public GitHub repository." />
       <QuickstartTabs local={LOCAL_COMMAND} github={GITHUB_COMMAND} />
+      <p className="mt-xl text-center text-label-sm text-text-secondary">
+        Prefer a hosted scan?{" "}
+        <a href="/scan" className="font-medium text-text-primary underline underline-offset-4">
+          Run it in the web app
+        </a>{" "}
+        — no signup.
+      </p>
     </Section>
   );
 }

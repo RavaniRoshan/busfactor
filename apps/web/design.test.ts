@@ -38,4 +38,22 @@ describe("web design system", () => {
     const page = readFileSync(path.join(root, "app/r/[slug]/page.tsx"), "utf8");
     expect(page).toContain("robots: { index: false, follow: false }");
   });
+
+  it("links the landing page and the webapp routes in both directions", () => {
+    const home = readFileSync(path.join(root, "app/page.tsx"), "utf8");
+    const chrome = readFileSync(path.join(root, "components/site-chrome.tsx"), "utf8");
+    const scan = readFileSync(path.join(root, "app/scan/page.tsx"), "utf8");
+    const docs = readFileSync(path.join(root, "app/docs/page.tsx"), "utf8");
+    const report = readFileSync(path.join(root, "app/r/[slug]/page.tsx"), "utf8");
+
+    expect(chrome).toContain('href: "/scan"');
+    expect(chrome).toContain('href: "/docs"');
+    expect(home).toContain('href="/scan"');
+    expect(home).toContain('href="/docs"');
+    expect(scan).toContain('href="/docs"');
+    expect(docs).toContain('href="/scan"');
+    expect(report).toContain('href="/scan"');
+    expect(report).toContain('href="/docs"');
+    expect(report).toContain('href="/"');
+  });
 });

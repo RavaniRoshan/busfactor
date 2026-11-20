@@ -1,8 +1,11 @@
 import Image from "next/image";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "cn";
 
-const navItems = [
+const navItems: { label: string; href: string; primary?: boolean }[] = [
+  { label: "Scan", href: "/scan", primary: true },
   { label: "Quickstart", href: "/#quickstart" },
   { label: "CLI", href: "/#cli" },
   { label: "Limits", href: "/#limits" },
@@ -21,7 +24,12 @@ export function SiteHeader() {
             <a
               key={item.href}
               href={item.href}
-              className="rounded-corner-md px-md py-sm text-label-sm text-text-primary outline-none hover:text-text-secondary focus-visible:ring-3 focus-visible:ring-ring/50"
+              className={cn(
+                "rounded-corner-md px-md py-sm text-label-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                item.primary
+                  ? buttonVariants({ variant: "default", size: "sm" })
+                  : "text-text-primary hover:text-text-secondary"
+              )}
             >
               {item.label}
             </a>

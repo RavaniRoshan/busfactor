@@ -15,6 +15,9 @@ export default function ScanPage() {
         text="Get an operability verdict, a risk map, an OPERATE.md draft, and the questions only the author can answer."
       />
       <ScanForm />
+      <p className="mt-xl text-center text-label-sm text-text-secondary">
+        New here? <a href="/docs" className="font-medium text-text-primary underline underline-offset-4">Read the quickstart</a>.
+      </p>
     </PageFrame>
   );
 }
