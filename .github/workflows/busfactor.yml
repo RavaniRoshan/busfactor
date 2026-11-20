@@ -1,0 +1,37 @@
+name: BusFactor
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  busfactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @busfactor/core build
+      - run: pnpm --filter @busfactor/cli build
+      - name: Scan repository
+        run: node packages/cli/dist/index.js scan . --out busfactor-report --format json
+      - name: Comment on pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node scripts/github-action-comment.mjs busfactor-report/report.json
+      - name: Enforce threshold
+        env:
+          BUSFACTOR_THRESHOLD: ${{ vars.BUSFACTOR_THRESHOLD }}
+        run: |
+          node -e "const r=require('./busfactor-report/report.json'); const t=Number(process.env.BUSFACTOR_THRESHOLD||0); if (t && r.score < t) { console.error('BusFactor score ' + r.score + ' is below threshold ' + t); process.exit(1); }"
