@@ -4,14 +4,14 @@ import path from "node:path";
 import process from "node:process";
 import { Command } from "commander";
 
-import { renderMarkdownReport, scanTarget } from "@busfactor/core";
+import { renderMarkdownReport, scanTarget } from "@ravaniroshan/busfactor-core";
 
 const program = new Command();
 
 program
   .name("busfactor")
   .description("Could someone who didn't write this safely run it?")
-  .version("0.1.0");
+  .version("0.1.6");
 
 program
   .command("scan")

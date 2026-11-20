@@ -1,6 +1,6 @@
 {
-  "name": "@busfactor/core",
-  "version": "0.1.0",
+  "name": "@ravaniroshan/busfactor-core",
+  "version": "0.1.1",
   "description": "Deterministic operability analysis engine for BusFactor",
   "type": "module",
   "main": "./dist/index.js",

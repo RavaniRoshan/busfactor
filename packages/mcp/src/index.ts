@@ -2,7 +2,7 @@
 import readline from "node:readline";
 import process from "node:process";
 
-import { scanTarget } from "@busfactor/core";
+import { scanTarget } from "@ravaniroshan/busfactor-core";
 
 interface JsonRpcRequest {
   jsonrpc?: string;

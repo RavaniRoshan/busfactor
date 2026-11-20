@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm --filter @busfactor/core build && pnpm --filter @busfactor/web build",
+  "buildCommand": "pnpm --filter @ravaniroshan/busfactor-core build && pnpm --filter @busfactor/web build",
   "outputDirectory": "apps/web/.next",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs"

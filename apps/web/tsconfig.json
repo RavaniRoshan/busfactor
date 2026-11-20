@@ -26,7 +26,7 @@
       "@/*": [
         "./*"
       ],
-      "@busfactor/core": [
+      "@ravaniroshan/busfactor-core": [
         "../../packages/core/dist/index.d.ts"
       ]
     }
