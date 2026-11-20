@@ -36,8 +36,11 @@ export const runnabilityScanner: Scanner = {
   scan: async (snapshot) => {
     const findings: Finding[] = [];
     const files = new Set(snapshot.files.map((file) => file.path));
-    const hasReadme = snapshot.files.some((file) => /^README(\.[a-z]+)?$/i.test(path.basename(file.path)));
-    const readmeFile = snapshot.files.find((file) => /^README(\.[a-z]+)?$/i.test(path.basename(file.path)));
+    const readmeCandidates = snapshot.files
+      .filter((file) => /^README(\.[a-z]+)?$/i.test(path.basename(file.path)))
+      .sort((a, b) => a.path.split("/").length - b.path.split("/").length || a.path.localeCompare(b.path));
+    const hasReadme = readmeCandidates.length > 0;
+    const readmeFile = readmeCandidates[0];
     const readmeContent = readmeFile === undefined ? "" : await snapshot.readFile(readmeFile.path).catch(() => "");
     const documentedRun = RUN_KEYWORDS.some((keyword) => readmeContent.toLowerCase().includes(keyword.toLowerCase()));
 

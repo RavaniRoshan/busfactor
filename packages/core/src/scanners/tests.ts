@@ -16,12 +16,14 @@ function makeFinding(file: string, ruleId: string, severity: Finding["severity"]
 
 function isTestFile(filePath: string): boolean {
   const base = path.basename(filePath).toLowerCase();
+  const segments = filePath.split("/");
   return (
     base.includes(".test.") ||
     base.includes(".spec.") ||
-    filePath.includes("__tests__/") ||
-    filePath.includes("/test/") ||
-    filePath.includes("/tests/")
+    base.startsWith("test") ||
+    segments.includes("test") ||
+    segments.includes("tests") ||
+    segments.includes("__tests__")
   );
 }
 

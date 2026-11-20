@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { Finding, Scanner } from "../types.js";
 
 function makeFinding(file: string, ruleId: string, severity: Finding["severity"], message: string, quote: string): Finding {
@@ -14,6 +15,25 @@ function makeFinding(file: string, ruleId: string, severity: Finding["severity"]
 }
 
 const ENV_VAR_REGEX = /\b(?:process\.env\.([A-Za-z_][A-Za-z0-9_]*)|os\.environ(?:\.get)?\(\s*["']([A-Za-z_][A-Za-z0-9_]*)["']|import\.meta\.env\.([A-Za-z_][A-Za-z0-9_]*)|os\.Getenv\(\s*"([A-Za-z_][A-Za-z0-9_]*)"\s*\))/g;
+
+const STANDARD_ENV_VARS = new Set([
+  "PATH",
+  "HOME",
+  "USER",
+  "SHELL",
+  "TERM",
+  "PAGER",
+  "LESS",
+  "LANG",
+  "LC_ALL",
+  "XDG_CONFIG_HOME",
+  "XDG_DATA_HOME",
+  "XDG_CACHE_HOME",
+  "PWD",
+  "OLDPWD",
+  "TMPDIR",
+  "NODE_ENV",
+]);
 
 function collectEnvVars(content: string): Set<string> {
   const names = new Set<string>();
@@ -33,6 +53,8 @@ export const configScanner: Scanner = {
     const used = new Set<string>();
     for (const file of snapshot.files) {
       if (file.binary || file.path.endsWith(".md")) continue;
+      if (file.path.split("/").some((part) => part === "test" || part === "tests" || part === "__tests__")) continue;
+      if (path.basename(file.path).toLowerCase().startsWith("test")) continue;
       try {
         const content = await snapshot.readFile(file.path);
         for (const name of collectEnvVars(content)) used.add(name);
@@ -40,6 +62,7 @@ export const configScanner: Scanner = {
         // Unreadable files are skipped; ingestion already recorded the reason.
       }
     }
+    for (const name of STANDARD_ENV_VARS) used.delete(name);
 
     const documented = new Set<string>();
     const exampleFiles = [".env.example", ".env.template", ".env.sample"];
