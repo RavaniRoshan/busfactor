@@ -1,12 +1,12 @@
 phase: MVP
-last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ 3f70d69
+last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ d13e3d9
 status: BLOCKED
 gates:
   p0_bootstrap: pass
   url_ingest: stale
   llm_live: stale
   gate_a: not_started
-  web_deploy: pass (production, dpl_2Y8eFySXygHuN7f7yK737A7aRA69, 20 Nov 2026)
+  web_deploy: pass (production, dpl_5mVHWV4GvK5Ahsq8kn7qsU6xFybQ, 20 Nov 2026)
   web_navigation: pass (app shell: / → /scan ↔ /docs ↔ /r/:slug)
   web_landing_removed: pass (no landing artifacts in webapp or repo)
   web_scan_e2e: fail (local pass, production 404: in-memory store lost across serverless instances; see BLOCKERS.md)
