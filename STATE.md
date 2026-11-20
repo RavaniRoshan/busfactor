@@ -1,6 +1,6 @@
 phase: MVP
 last_prompt: P1.7 @ b4cfaa7
-status: BLOCKED
+status: PASS
 gates:
   p0_bootstrap: pass
   url_ingest: stale
@@ -18,6 +18,5 @@ measured:
   citation_drop_rate: null
   gold_agreement: null
   seed_repos_scanned: 0
-open_blockers:
-  - "Gate A pending: post findings from 5-10 seed repos and record replies in docs/validation.md"
-next: P1.8 (blocked on Gate A: needs docs/validation.md evidence)
+open_blockers: []
+next: P1.8 because Gate A is deferred by user request
