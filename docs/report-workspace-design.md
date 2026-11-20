@@ -8,7 +8,7 @@ The reference shows the **report workspace**: a dark, rounded panel floating ove
 
 ## Layout
 
-- Full-bleed `dusk-road.webp` background behind a centred panel, `max-width: 1536px`, margin ~24px, radius ~14px.
+- Centred panel only, `max-width: 1536px`, margin ~24px, radius ~14px, on the app's plain surface. The reference's scenic backdrop was a presentation prop; it is deliberately not reproduced (decision 20 Nov 2026).
 - Panel header (~64px): brand mark, repository label in mono, a lavender badge, score aligned right in mono (`64/100` in the reference).
 - Body: left nav ~280px with a right divider; content column centred, `max-width: 768px`, generous vertical padding.
 - Four nav entries, in order: **Verdict** (gauge icon), **Risk map** (map icon), **OPERATE.md** (file icon), **Author questions** (question icon).

@@ -58,6 +58,7 @@ export function ReportWindow({ report, slug, view }: { report: Report; slug: str
               key={id}
               id={`rw-tab-${id}`}
               value={id}
+              nativeButton={false}
               tabIndex={view === id ? 0 : -1}
               className={`rw-nav-link ${view === id ? "rw-nav-active" : ""}`}
               aria-current={view === id ? "page" : undefined}

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -23,6 +25,11 @@ const fixture: Report = {
 };
 
 describe("ReportWindow", () => {
+  it("declares nav tabs as non-native buttons because they render links", () => {
+    const source = readFileSync(path.join(process.cwd(), "components/report-window.tsx"), "utf8");
+    expect(source).toContain("nativeButton={false}");
+  });
+
   it("renders the persistent shell and links every view", () => {
     const html = renderToStaticMarkup(<ReportWindow report={fixture} slug="abc123" view="verdict" />);
     expect(html).toContain("report-window");

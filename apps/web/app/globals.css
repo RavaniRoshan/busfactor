@@ -246,15 +246,6 @@
 
 /* Report workspace: a dark panel scoped away from the app's light/dark theme. */
 @layer components {
-  .report-backdrop {
-    position: relative;
-    width: 100%;
-    padding: var(--spacing-lg);
-    background-image: url('/dusk-road.webp');
-    background-position: center;
-    background-size: cover;
-  }
-
   .report-window {
     --rw-surface: oklch(0.19 0.012 265);
     --rw-surface-raised: oklch(0.24 0.014 265);

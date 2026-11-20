@@ -1,6 +1,13 @@
 {
   "version": 2,
   "skills": {
+    "build-dashboard": {
+      "source": "anthropics/knowledge-work-plugins",
+      "commit": "0e0fcacddcc892eb92a1b7873ff9d68159c47571",
+      "sourceType": "github",
+      "skillPath": "data/skills/build-dashboard/SKILL.md",
+      "computedHash": "e37e26000f4642eac60fcaf689cea136dfead1be7719cbb138639c3f6c42dfd7"
+    },
     "neon-postgres": {
       "source": "neondatabase/agent-skills",
       "commit": "d3601d9e1f9398b96a1ee25047bafba5f04199eb",

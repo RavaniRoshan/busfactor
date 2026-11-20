@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 const root = process.cwd();
 
 describe("report workspace surface", () => {
-  it("ships the same-origin backdrop", () => {
-    expect(existsSync(path.join(root, "public/dusk-road.webp"))).toBe(true);
+  it("has no decorative backdrop asset", () => {
+    expect(existsSync(path.join(root, "public/dusk-road.webp"))).toBe(false);
   });
 
   it("ships the Space UI primitive files", () => {

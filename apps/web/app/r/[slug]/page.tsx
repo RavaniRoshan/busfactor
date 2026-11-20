@@ -29,7 +29,7 @@ export default async function ReportPage({
 
   return (
     <PageFrame>
-      <div className="report-backdrop py-lg">
+      <div className="py-lg">
         <ReportWindow report={report} slug={slug} view={view} />
       </div>
 
