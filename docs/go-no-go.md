@@ -3,12 +3,12 @@
 | Item | Status | Evidence |
 | --- | --- | --- |
 | 10+ seed reports live | NO | Only synthetic and external scan artifacts exist; no public reports published. |
-| Landing page and docs live | PARTIAL | `apps/web` builds locally; not deployed. |
+| Landing page and docs live | GO | Deployed to Vercel production `https://heir-weld.vercel.app` (deployment `dpl_AyAFEW7WBZEa8tQBVGxULJ7QBpMw`, 20 Nov 2026). `/`, `/scan`, `/docs`, `/terms`, `/privacy`, `/removal` all return 200 with the rebuilt UI. |
 | Scan error rate under 3% | UNKNOWN | No production traffic yet. |
 | Cost per scan inside cap | PARTIAL | Mock runs cost $0; live LLM cost not measured. |
 | Kill switch tested | GO | `BUSFACTOR_KILL_SWITCH=1` returns 503. |
 | Spend cap set | GO | `BUSFACTOR_DAILY_SPEND_CAP_USD` enforced in the scan route. |
-| Terms, privacy, removal live | NO | No legal pages exist yet. |
+| Terms, privacy, removal live | GO | `/terms`, `/privacy`, `/removal` return 200 on the production deployment. |
 | CLI published | NO | Package is built locally; npm publish not done. |
 | Repository public if open-source | NO | Repository is local only. |
 | README done | PARTIAL | Root README not yet written. |

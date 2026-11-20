@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-11-20 — Vercel production deployment
+
+- Decision: Deploy the root `heir` Vercel project (monorepo build config) rather than the separate `apps/web` project.
+- Branch taken: `vercel --prod --yes` from the repo root after verifying the exact root build command locally.
+- Why: `vercel.json` at the root builds core then web; the Vercel CLI is authenticated as `ravaniroshan`.
+- Evidence: deployment `dpl_AyAFEW7WBZEa8tQBVGxULJ7QBpMw`, production URL `https://heir-weld.vercel.app`, READY. Public (unauthenticated) requests to `/`, `/scan`, `/docs`, `/terms`, `/privacy`, `/removal` returned 200; fonts self-hosted. `robots` noindex retained on report route.
+- Scope note: Deployment Protection was reported as enabled, but unauthenticated production requests succeeded, so no setting change was made. Gate A/B/C remain unvalidated.
+
 ## 2026-11-20 — Web rebuild (explicit override of P2.5 / Gate A)
 
 - Decision: Rebuild the `apps/web` UI with shadcn/ui on Base UI (`base-nova`) using a design system extracted from the read-only Figma landing page.
