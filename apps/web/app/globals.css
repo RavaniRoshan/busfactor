@@ -352,6 +352,12 @@
     color: var(--rw-text);
   }
 
+  .report-window .rw-card {
+    border-color: var(--rw-border);
+    background: var(--rw-surface-raised);
+    color: var(--rw-text);
+  }
+
   .report-window .rw-cite {
     display: inline-flex;
     border-radius: var(--radius-corner-sm);
