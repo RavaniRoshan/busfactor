@@ -1,5 +1,14 @@
 # Decisions
 
+## 2026-11-20 — Report workspace redesign (plan execution)
+
+- Decision: Rebuild `/r/[slug]` as the dark four-view workspace from the reference screenshots using MIT Space UI community primitives.
+- Branch taken: Five TDD tasks in an isolated worktree (`report-workspace-redesign`), merged fast-forward to `main`; `report-design.test.ts`, `report-view.test.ts`, view tests and shell tests pin each deliverable.
+- Why: The screenshot was a design reference, not a product change — the spec `docs/report-workspace-design.md` pins that prototype labels (acme/payments-api, 64/100, Setup/Configuration) must never become real data.
+- Rulings during execution: Space UI CLI wrote into `src/` and added theme tokens — relocated primitives into `components/ui` + `lib`, kept additive tokens, preserved legacy `danger` badge variant; added a Vitest `@` alias for Space UI's own imports; narrowed an old guard that forbade the restored backdrop; `TabsList` has no `orientation` prop (it belongs on `Tabs`); spec gaps (exact OPERATE heading, band explanation, provenance) fixed in one pass after review; unused `@usespaceui/squircle` dependency removed with its lockfile entry.
+- Evidence: fresh whole-branch review graded Important first, then Clean / approve after two fix passes; `pnpm gate` passes (25 core + 29 web tests); production build passes; deployment `dpl_BByXDVv1ycGKt9czk5wHZgyba5xa`; production scan 200 → report 200, view markers and noindex present, root still 307 → `/scan`.
+- Non-goal: the separate landing-page repo remains Roshan's work; Gates A/B/C remain unvalidated.
+
 ## 2026-11-20 — Production served stale remote `main`
 
 - Decision: Push the local work to `origin/main`; a Neon-triggered git deployment had promoted a build from the stale remote branch, so `https://heir-weld.vercel.app/` served the old pre-rebuild page again.
