@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ uncommitted
+last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ d775427
 status: PASS
 gates:
   p0_bootstrap: pass
@@ -21,4 +21,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: []
-next: Restyle the remaining webapp routes (/scan, /r/[slug], /docs, legal) to the same design system, then re-run gate and build
+next: All in-scope webapp code is rebuilt and verified. Remaining items are external or human-controlled: deploy to Vercel, Gate A public posts, 10+ seed reports, live cost/p50 measurement (no ANTHROPIC_API_KEY present). Do not mark Gates A/B/C passed.

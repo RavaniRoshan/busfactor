@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-
 import { jobs, reports } from "@/lib/store";
+import { Badge } from "@/components/ui/badge";
 
 async function readJsonArray(filePath: string): Promise<unknown[]> {
   try {
@@ -11,6 +11,8 @@ async function readJsonArray(filePath: string): Promise<unknown[]> {
   }
 }
 
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function AdminMetricsPage({
   searchParams,
 }: {
@@ -19,24 +21,39 @@ export default async function AdminMetricsPage({
   const { token } = await searchParams;
   if (token !== process.env.BUSFACTOR_ADMIN_TOKEN || !process.env.BUSFACTOR_ADMIN_TOKEN) {
     return (
-      <main>
-        <h1>Unauthorized</h1>
+      <main className="flex min-h-screen items-center justify-center bg-brand-tertiary p-xl text-text-primary">
+        <div className="rounded-corner-lg border border-border-secondary bg-surface-secondary-bg p-2xl text-center">
+          <h1 className="type-display">Unauthorized</h1>
+        </div>
       </main>
     );
   }
 
   const waitlist = await readJsonArray(path.join(process.cwd(), "data", "waitlist.json"));
   const feedback = await readJsonArray(path.join(process.cwd(), "data", "feedback.json"));
+  const metrics = [
+    { label: "Jobs", value: jobs.size },
+    { label: "Reports", value: reports.size },
+    { label: "Waitlist emails", value: waitlist.length },
+    { label: "Feedback entries", value: feedback.length },
+  ];
 
   return (
-    <main>
-      <h1>BusFactor metrics</h1>
-      <ul>
-        <li>Jobs: {jobs.size}</li>
-        <li>Reports: {reports.size}</li>
-        <li>Waitlist emails: {waitlist.length}</li>
-        <li>Feedback entries: {feedback.length}</li>
-      </ul>
+    <main className="min-h-screen bg-brand-tertiary px-xl py-4xl text-text-primary md:px-2xl">
+      <div className="mx-auto w-full max-w-article">
+        <div className="flex flex-wrap items-center justify-between gap-md">
+          <h1 className="type-display">BusFactor metrics</h1>
+          <Badge variant="warning">Internal</Badge>
+        </div>
+        <dl className="mt-3xl grid gap-xl sm:grid-cols-2">
+          {metrics.map((metric) => (
+            <div key={metric.label} className="rounded-corner-lg border border-border-secondary bg-surface-secondary-bg p-xl">
+              <dt className="text-label-sm text-text-secondary">{metric.label}</dt>
+              <dd className="mt-sm font-mono type-display tabular-nums text-text-primary">{metric.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
     </main>
   );
 }
