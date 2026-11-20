@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ 1b38e2a
+last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ da6676a
 status: PARTIAL
 gates:
   p0_bootstrap: pass
