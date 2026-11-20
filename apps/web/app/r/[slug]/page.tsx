@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { reports } from "@/lib/store";
+import FeedbackWidget from "./FeedbackWidget";
 
 type Report = {
   score: number;
@@ -63,6 +64,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
         <a href={`/api/report/${slug}/fixes`}>Download fix list</a> ·{" "}
         <a href={`/badge/${slug}.svg`}>Badge</a>
       </p>
+      <FeedbackWidget slug={slug} />
     </main>
   );
 }
