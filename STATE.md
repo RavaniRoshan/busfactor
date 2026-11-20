@@ -1,12 +1,12 @@
 phase: MVP
-last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ 7660008
+last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ 9e428ec
 status: PASS
 gates:
   p0_bootstrap: pass
   url_ingest: stale
   llm_live: stale
   gate_a: not_started
-  web_deploy: pass (production, dpl_FinFhuyAXwfJqFXzvpef4xYb8KiM, 20 Nov 2026)
+  web_deploy: pass (production, dpl_9Lfb2KuPG3GSpmnGGqNUjKUaGqei, 20 Nov 2026; remote main synced)
   web_navigation: pass (app shell: / → /scan ↔ /docs ↔ /r/:slug)
   web_landing_removed: pass (no landing artifacts in webapp or repo)
   web_scan_e2e: pass (production POST 200 → report 200 → badge 200, deployment dpl_FinFhuyAXwfJqFXzvpef4xYb8KiM)
