@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: P2.5 @ 89e82bd
+last_prompt: P2.6 @ 9a3c93c
 status: PASS
 gates:
   p0_bootstrap: pass
@@ -19,4 +19,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: []
-next: P2.6 because landing page, docs, and waitlist are implemented
+next: P2.7 because feedback and admin metrics are implemented
