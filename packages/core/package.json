@@ -21,8 +21,7 @@
   },
   "dependencies": {
     "tar": "^7.4.3",
-    "zod": "^3.24.2",
-    "zod-to-json-schema": "^3.24.5"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/tar": "^6.1.13"

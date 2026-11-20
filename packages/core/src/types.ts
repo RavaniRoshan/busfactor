@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
 
 export const DIMENSION_DEFINITIONS = [
   { id: "runnability", label: "Runnability", weight: 20 },
@@ -185,9 +184,9 @@ export interface Scanner {
 }
 
 export const jsonSchemas = {
-  evidence: zodToJsonSchema(evidenceSchema, "Evidence"),
-  finding: zodToJsonSchema(findingSchema, "Finding"),
-  authorQuestion: zodToJsonSchema(authorQuestionSchema, "AuthorQuestion"),
-  snapshot: zodToJsonSchema(snapshotSchema, "Snapshot"),
-  report: zodToJsonSchema(reportSchema, "Report"),
+  evidence: z.toJSONSchema(evidenceSchema),
+  finding: z.toJSONSchema(findingSchema),
+  authorQuestion: z.toJSONSchema(authorQuestionSchema),
+  snapshot: z.toJSONSchema(snapshotSchema),
+  report: z.toJSONSchema(reportSchema),
 } as const;
