@@ -7,7 +7,7 @@ const contentSecurityPolicy = [
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
-  "connect-src 'self'",
+  "connect-src 'self' https://vitals.vercel-insights.com",
   isDev ? "" : "upgrade-insecure-requests",
 ]
   .filter(Boolean)

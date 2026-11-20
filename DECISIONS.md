@@ -1,5 +1,12 @@
 # Decisions
 
+## 2026-11-20 — Production served stale remote `main`
+
+- Decision: Push the local work to `origin/main`; a Neon-triggered git deployment had promoted a build from the stale remote branch, so `https://heir-weld.vercel.app/` served the old pre-rebuild page again.
+- Branch taken: Keep the local tree (all rebuild, removal and persistence work) as the source of truth, re-add the remote PR's only real feature (`@vercel/analytics` + `<Analytics />`), allow its CSP endpoint, then merge remote history with `-s ours` so no work is lost from the log.
+- Why: The remote PR was based on the old baseline and would have reverted 14 local commits if merged normally. Its analytics feature is preserved explicitly in our tree.
+- Evidence: 14 local commits ahead of remote; remote PR #1 changed only `layout.tsx`, `package.json`, `pnpm-lock.yaml`. `pnpm gate` passes (35 tests) after re-adding analytics.
+
 ## 2026-11-20 — Neon persistence resolved in production
 
 - Decision: Use the Neon Vercel Marketplace integration to supply `DATABASE_URL` rather than pasting the connection string into a file or a shell command.
