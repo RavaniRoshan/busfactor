@@ -100,13 +100,17 @@ function createMemoryStore(): Store {
 let pool: Pool | null = null;
 let ready: Promise<void> | null = null;
 
+function connectionString(): string | undefined {
+  return process.env.DATABASE_URL ?? process.env.NEON_DATABASE_URL ?? process.env.POSTGRES_URL;
+}
+
 function getPool(): Pool {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) throw new Error("DATABASE_URL is not set");
+  const url = connectionString();
+  if (!url) throw new Error("No Postgres connection string is set");
   if (!pool) {
     // HTTP queries avoid needing a WebSocket in serverless runtimes.
     neonConfig.poolQueryViaFetch = true;
-    pool = new Pool({ connectionString });
+    pool = new Pool({ connectionString: url });
   }
   return pool;
 }
@@ -205,7 +209,7 @@ function createPostgresStore(): Store {
   };
 }
 
-export const store: Store = process.env.DATABASE_URL ? createPostgresStore() : createMemoryStore();
+export const store: Store = connectionString() ? createPostgresStore() : createMemoryStore();
 
 export function makeSlug() {
   return Math.random().toString(36).slice(2, 10);
