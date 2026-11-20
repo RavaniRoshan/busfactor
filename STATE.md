@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: P1.6 @ 0d152a5
+last_prompt: P1.7 @ b4cfaa7
 status: PASS
 gates:
   p0_bootstrap: pass
@@ -18,5 +18,6 @@ measured:
   citation_drop_rate: null
   gold_agreement: null
   seed_repos_scanned: 0
-open_blockers: []
-next: P1.7 because LLM passes and OPERATE.md are implemented and tested
+open_blockers:
+  - "Gate A pending: post findings from 5-10 seed repos and record replies in docs/validation.md"
+next: P1.8 (blocked on Gate A: needs docs/validation.md evidence)
