@@ -1,0 +1,32 @@
+{
+  "repos": [
+    {
+      "id": "clean",
+      "path": "fixtures/repos/clean",
+      "verdict": "handoff-ready",
+      "knownIssues": [],
+      "hasSecret": false
+    },
+    {
+      "id": "mid",
+      "path": "fixtures/repos/mid",
+      "verdict": "risky",
+      "knownIssues": ["deps.lockfile.missing", "deps.version.wildcard", "tests.missing", "tests.command.missing", "ci.missing", "run.readme.missing", "config.env.example.missing", "config.env.undocumented"],
+      "hasSecret": false
+    },
+    {
+      "id": "bad",
+      "path": "fixtures/repos/bad",
+      "verdict": "author-only",
+      "knownIssues": ["secret.env.committed", "secret.stripe.live", "config.env.example.missing", "config.env.undocumented", "deps.lockfile.missing", "deps.version.wildcard", "deps.package.deprecated", "tests.missing", "tests.command.missing", "ci.missing", "run.readme.missing"],
+      "hasSecret": true
+    },
+    {
+      "id": "hostile",
+      "path": "fixtures/repos/hostile",
+      "verdict": "operable-with-briefing",
+      "knownIssues": ["tests.missing", "ci.missing", "run.steps.missing"],
+      "hasSecret": false
+    }
+  ]
+}

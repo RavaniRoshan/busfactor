@@ -1,0 +1,49 @@
+{
+  "generatedAt": "2026-11-20T02:59:11.586Z",
+  "results": [
+    {
+      "id": "clean",
+      "score": 100,
+      "verdict": "handoff-ready",
+      "expectedVerdict": "handoff-ready",
+      "verdictAgreement": true,
+      "secretPrecision": 1,
+      "secretRecall": 1,
+      "knownIssuesFound": 0,
+      "knownIssuesTotal": 0
+    },
+    {
+      "id": "mid",
+      "score": 68,
+      "verdict": "risky",
+      "expectedVerdict": "risky",
+      "verdictAgreement": true,
+      "secretPrecision": 1,
+      "secretRecall": 1,
+      "knownIssuesFound": 7,
+      "knownIssuesTotal": 8
+    },
+    {
+      "id": "bad",
+      "score": 49,
+      "verdict": "author-only",
+      "expectedVerdict": "author-only",
+      "verdictAgreement": true,
+      "secretPrecision": 1,
+      "secretRecall": 1,
+      "knownIssuesFound": 11,
+      "knownIssuesTotal": 11
+    },
+    {
+      "id": "hostile",
+      "score": 76,
+      "verdict": "operable-with-briefing",
+      "expectedVerdict": "operable-with-briefing",
+      "verdictAgreement": true,
+      "secretPrecision": 1,
+      "secretRecall": 1,
+      "knownIssuesFound": 3,
+      "knownIssuesTotal": 3
+    }
+  ]
+}

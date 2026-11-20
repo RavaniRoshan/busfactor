@@ -12,7 +12,8 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "eslint .",
     "test": "pnpm -r --if-present test",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "eval": "node scripts/eval.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
