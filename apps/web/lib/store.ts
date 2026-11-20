@@ -19,6 +19,7 @@ interface KV<T> {
   get(key: string): Promise<T | undefined>;
   set(key: string, value: T): Promise<void>;
   count(): Promise<number>;
+  values(): Promise<T[]>;
 }
 
 interface RateLimitStore extends KV<{ day: string; count: number }> {
@@ -52,6 +53,9 @@ function memoryKV<T>(seed: Map<string, T>): KV<T> {
     },
     async count() {
       return seed.size;
+    },
+    async values() {
+      return [...seed.values()];
     },
   };
 }
@@ -157,6 +161,14 @@ function pgKV<T>(namespace: string): KV<T> {
         [namespace]
       );
       return Number(result.rows[0]?.count ?? 0);
+    },
+    async values() {
+      await ensureSchema();
+      const result = await getPool().query(
+        `SELECT value FROM busfactor_store WHERE namespace = $1 ORDER BY updated_at DESC`,
+        [namespace]
+      );
+      return result.rows.map((row) => row.value as T);
     },
   };
 }

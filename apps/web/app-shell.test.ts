@@ -57,6 +57,15 @@ describe("webapp shell", () => {
     expect(page).toContain("robots: { index: false, follow: false }");
   });
 
+  it("keeps the operator dashboard answer-first and noindex", () => {
+    const page = readFileSync(path.join(root, "app/admin/metrics/page.tsx"), "utf8");
+    expect(page).toContain("robots: { index: false, follow: false }");
+    for (const question of ["Is it working?", "Where does it fail?", "Is it helping?", "What should I do?"]) {
+      expect(page).toContain(question);
+    }
+    expect(page).toContain("store.jobs.values()");
+  });
+
   it("allows eval only in the development CSP", () => {
     const config = readFileSync(path.join(root, "next.config.mjs"), "utf8");
     expect(config).toContain('process.env.NODE_ENV === "development"');
