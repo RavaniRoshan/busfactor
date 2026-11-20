@@ -4,7 +4,7 @@
 | --- | --- | --- |
 | 10+ seed reports live | NO | Only synthetic and external scan artifacts exist; no public reports published. |
 | Landing page and docs live | GO | Deployed to Vercel production `https://heir-weld.vercel.app` (deployment `dpl_AyAFEW7WBZEa8tQBVGxULJ7QBpMw`, 20 Nov 2026). `/`, `/scan`, `/docs`, `/terms`, `/privacy`, `/removal` all return 200 with the rebuilt UI. |
-| Scan error rate under 3% | UNKNOWN | No production traffic yet. |
+| Scan error rate under 3% | NO | Live deployed scan returned 200, but the resulting report URL 404s across serverless instances (in-memory store). See BLOCKERS.md and `docs/prompts/fix-6.md`. |
 | Cost per scan inside cap | PARTIAL | Mock runs cost $0; live LLM cost not measured. |
 | Kill switch tested | GO | `BUSFACTOR_KILL_SWITCH=1` returns 503. |
 | Spend cap set | GO | `BUSFACTOR_DAILY_SPEND_CAP_USD` enforced in the scan route. |
@@ -22,3 +22,4 @@
 - `docs/prompts/fix-3.md`: Add 16 more labeled repositories to the gold set.
 - `docs/prompts/fix-4.md`: Deploy the web app and seed 10 public reports.
 - `docs/prompts/fix-5.md`: Measure live scan cost and p50 duration.
+- `docs/prompts/fix-6.md`: Persist scans and reports outside a single serverless instance (blocked on `DATABASE_URL`).

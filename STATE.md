@@ -1,6 +1,6 @@
 phase: MVP
 last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ 8ef9551
-status: PASS
+status: BLOCKED
 gates:
   p0_bootstrap: pass
   url_ingest: stale
@@ -9,6 +9,7 @@ gates:
   web_design_system: pass
   web_landing_build: pass
   web_deploy: pass (production, dpl_AyAFEW7WBZEa8tQBVGxULJ7QBpMw, 20 Nov 2026)
+  web_scan_e2e: fail (in-memory store lost across serverless instances; see BLOCKERS.md)
 env:
   pkg_manager: pnpm@10.15.0 (activated via corepack)
   node: v24.21.0
@@ -21,5 +22,5 @@ measured:
   citation_drop_rate: null
   gold_agreement: null
   seed_repos_scanned: 0
-open_blockers: []
-next: Webapp is rebuilt, verified and deployed. Remaining items are external or human-controlled: Gate A public posts, 10+ seed reports, live cost/p50 measurement (no ANTHROPIC_API_KEY present), custom domain. Do not mark Gates A/B/C passed.
+open_blockers: [production report persistence needs DATABASE_URL — see BLOCKERS.md]
+next: BLOCKED on a persistent store decision and DATABASE_URL before the hosted scan flow works. Then Gate A posts, 10+ seed reports, and live cost/p50 measurement. Do not mark Gates A/B/C passed.
