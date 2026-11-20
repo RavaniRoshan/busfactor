@@ -4,3 +4,4 @@ export * from "./registry.js";
 export * from "./snapshot.js";
 export * from "./detection.js";
 export * from "./scanners/index.js";
+export * from "./scoring.js";

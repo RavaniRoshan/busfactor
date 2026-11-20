@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: P1.2 @ 14e56c9
+last_prompt: P1.3 @ 5c158cf
 status: PASS
 gates:
   p0_bootstrap: pass
@@ -19,4 +19,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: []
-next: P1.3 because ingestion and snapshot guards pass
+next: P1.4 because deterministic scanners pass on clean and bad fixtures
