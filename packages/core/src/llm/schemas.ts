@@ -10,7 +10,11 @@ export const repoMapSchema = z
         name: z.string().min(1),
         path: z.string().min(1),
         purpose: z.string().min(1),
-        evidence: z.array(evidenceSchema).default([]),
+        evidence: z
+          .preprocess(
+            (value) => (Array.isArray(value) ? value.filter((item) => typeof item === "object" && item !== null) : []),
+            z.array(evidenceSchema).default([]),
+          ),
       }).strict(),
     ),
     entryPoints: z.array(z.string()),
