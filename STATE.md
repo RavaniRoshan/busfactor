@@ -1,21 +1,21 @@
 phase: MVP
-last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ d13e3d9
-status: BLOCKED
+last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ 7660008
+status: PASS
 gates:
   p0_bootstrap: pass
   url_ingest: stale
   llm_live: stale
   gate_a: not_started
-  web_deploy: pass (production, dpl_5mVHWV4GvK5Ahsq8kn7qsU6xFybQ, 20 Nov 2026)
+  web_deploy: pass (production, dpl_FinFhuyAXwfJqFXzvpef4xYb8KiM, 20 Nov 2026)
   web_navigation: pass (app shell: / → /scan ↔ /docs ↔ /r/:slug)
   web_landing_removed: pass (no landing artifacts in webapp or repo)
-  web_scan_e2e: fail (local pass, production still 404 until DATABASE_URL is set; see BLOCKERS.md)
+  web_scan_e2e: pass (production POST 200 → report 200 → badge 200, deployment dpl_FinFhuyAXwfJqFXzvpef4xYb8KiM)
   web_persistence_code: pass (Neon adapter + async store API, 35 tests)
 env:
   pkg_manager: pnpm@10.15.0 (activated via corepack)
   node: v24.21.0
   deploy_target: Vercel project heir — https://heir-weld.vercel.app
-  db: unset
+  db: Neon Postgres (Vercel integration, DATABASE_URL secret; pooled connection)
   llm_key_present: false
 measured:
   scan_p50_s: null
@@ -23,5 +23,5 @@ measured:
   citation_drop_rate: null
   gold_agreement: null
   seed_repos_scanned: 0
-open_blockers: [production report persistence needs DATABASE_URL — see BLOCKERS.md]
-next: BLOCKED on a persistent store decision and DATABASE_URL before the hosted scan flow works. Then Gate A posts, 10+ seed reports, and live cost/p50 measurement. Do not mark Gates A/B/C passed.
+open_blockers: []
+next: Gate A human demand test (posts + 5 stranger requests), then 10+ seed reports and live cost/p50 measurement. Gates A/B/C are not passed. A separate landing-page repo is owned by Roshan.

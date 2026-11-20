@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-11-20 — Neon persistence resolved in production
+
+- Decision: Use the Neon Vercel Marketplace integration to supply `DATABASE_URL` rather than pasting the connection string into a file or a shell command.
+- Branch taken: Custom Prefix left empty, so the integration created `DATABASE_URL` as a hidden secret on the `heir` project; deployed the already-implemented async store.
+- Why: The secret never entered the repository, tool output, or logs. The pooled connection string is correct for serverless app traffic.
+- Evidence: deployment `dpl_FinFhuyAXwfJqFXzvpef4xYb8KiM`; production `POST /api/scan` 200, `GET /r/:slug` 200, `GET /api/report/:slug` 200, `GET /badge/:slug.svg` 200; second scan returned the same slug from the shared cache. `git grep` found no secret in tracked files.
+- Supersedes: the 2026-11-20 entries recording the persistence blocker. Gates A/B/C remain unvalidated.
+
 ## 2026-11-20 — Neon persistence adapter
 
 - Decision: Use Neon as the Postgres provider and replace the in-memory Maps with an async `store` interface.

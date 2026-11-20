@@ -4,7 +4,7 @@
 | --- | --- | --- |
 | 10+ seed reports live | NO | Only synthetic and external scan artifacts exist; no public reports published. |
 | Landing page and docs live | PARTIAL | Landing page intentionally removed from this webapp and repository; it will live in a separate repo. Docs are live at `/docs` on Vercel production `https://heir-weld.vercel.app`. |
-| Scan error rate under 3% | NO | Live deployed scan returned 200, but the resulting report URL 404s across serverless instances (in-memory store). See BLOCKERS.md and `docs/prompts/fix-6.md`. |
+| Scan error rate under 3% | PARTIAL | Production scan → report → badge verified 200 after Neon persistence (`dpl_FinFhuyAXwfJqFXzvpef4xYb8KiM`); no sustained traffic sample yet to measure a rate. |
 | Cost per scan inside cap | PARTIAL | Mock runs cost $0; live LLM cost not measured. |
 | Kill switch tested | GO | `BUSFACTOR_KILL_SWITCH=1` returns 503. |
 | Spend cap set | GO | `BUSFACTOR_DAILY_SPEND_CAP_USD` enforced in the scan route. |
@@ -22,4 +22,4 @@
 - `docs/prompts/fix-3.md`: Add 16 more labeled repositories to the gold set.
 - `docs/prompts/fix-4.md`: Deploy the web app and seed 10 public reports.
 - `docs/prompts/fix-5.md`: Measure live scan cost and p50 duration.
-- `docs/prompts/fix-6.md`: Persist scans and reports outside a single serverless instance (blocked on `DATABASE_URL`).
+- ~~`docs/prompts/fix-6.md`: Persist scans and reports outside a single serverless instance.~~ RESOLVED 20 Nov 2026 via Neon integration + async store adapter.

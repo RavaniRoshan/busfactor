@@ -1,8 +1,8 @@
 # fix-6 — Persist scans and reports outside a single serverless instance
 
-STATUS (20 Nov 2026): steps 1–5 are implemented in `apps/web/lib/store.ts` and
-all callers. Local gate passes (35 tests); local scan → report → badge returns 200.
-Only the credential and the production verification remain.
+RESOLVED (20 Nov 2026): Neon Vercel Marketplace integration set `DATABASE_URL`
+on the `heir` project. Deployment `dpl_FinFhuyAXwfJqFXzvpef4xYb8KiM` verified
+production scan → report → badge → shared cache all 200. No further action.
 
 ```text
 PRECONDITION: Roshan has chosen Neon and must set DATABASE_URL on the Vercel
