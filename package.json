@@ -1,0 +1,28 @@
+{
+  "name": "busfactor",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Could someone who didn't write this safely run it?",
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "gate": "pnpm typecheck && pnpm lint && pnpm test",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "eslint .",
+    "test": "pnpm -r --if-present test",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.22.0",
+    "@types/node": "^22.13.10",
+    "eslint": "^9.22.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.5.3",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.26.0",
+    "vitest": "^3.1.1"
+  }
+}

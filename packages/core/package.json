@@ -1,0 +1,29 @@
+{
+  "name": "@busfactor/core",
+  "version": "0.1.0",
+  "description": "Deterministic operability analysis engine for BusFactor",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "tar": "^7.4.3",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/tar": "^6.1.13"
+  }
+}

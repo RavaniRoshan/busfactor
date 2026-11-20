@@ -1,0 +1,21 @@
+{
+  "name": "@busfactor/cli",
+  "version": "0.1.0",
+  "description": "BusFactor command-line interface",
+  "type": "module",
+  "bin": {
+    "busfactor": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@busfactor/core": "workspace:*",
+    "commander": "^13.1.0"
+  }
+}
