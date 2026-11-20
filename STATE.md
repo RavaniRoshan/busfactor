@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: P2.3 @ a14261d
+last_prompt: P2.5 @ 89e82bd
 status: PASS
 gates:
   p0_bootstrap: pass
@@ -19,4 +19,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: []
-next: P2.5 because eval harness and CI gate are implemented
+next: P2.6 because landing page, docs, and waitlist are implemented
