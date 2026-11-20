@@ -19,4 +19,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: []
-next: P2.1 because the web MVP builds and scans successfully
+next: P2.2 because shareable report pages and badge are implemented
