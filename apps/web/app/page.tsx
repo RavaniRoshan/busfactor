@@ -2,59 +2,61 @@
 
 import { FormEvent, useState } from "react";
 
-interface ScanJob {
-  id: string;
-  status: "running" | "complete" | "failed";
-  report?: { score: number; verdict: string; operateMd: string };
-  error?: string;
-}
-
 export default function Home() {
-  const [target, setTarget] = useState("");
-  const [job, setJob] = useState<ScanJob | null>(null);
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    setError("");
-    setJob(null);
-    const response = await fetch("/api/scan", {
+    const response = await fetch("/api/waitlist", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ target }),
+      body: JSON.stringify({ email }),
     });
-    if (!response.ok) {
-      setError(await response.text());
-      return;
-    }
-    const created = (await response.json()) as { id: string };
-    const id = created.id;
-    const poll = async () => {
-      const statusResponse = await fetch(`/api/scan/${id}`);
-      const current = (await statusResponse.json()) as ScanJob;
-      setJob(current);
-      if (current.status === "running") setTimeout(poll, 1000);
-    };
-    void poll();
+    setMessage(response.ok ? "You are on the waitlist." : "Could not join the waitlist.");
   }
 
   return (
     <main>
-      <h1>BusFactor</h1>
-      <p>Could someone who didn&apos;t write this safely run it?</p>
+      <h1>Could someone who didn&apos;t write this safely run it?</h1>
+      <p>
+        BusFactor scans a repository and returns an operability verdict, a risk map, an OPERATE.md, and questions only the
+        original author can answer. Every claim cites a file and line.
+      </p>
+
+      <h2>How it works</h2>
+      <ol>
+        <li>Point BusFactor at a local path or public GitHub URL.</li>
+        <li>It runs deterministic checks and a citation-validated LLM review.</li>
+        <li>You get a score, the top reasons, OPERATE.md, and author-only questions.</li>
+      </ol>
+
+      <p>
+        <a href="/scan">Scan a repository</a> · <a href="/docs">Documentation</a>
+      </p>
+
+      <h2>Scoring</h2>
+      <p>
+        Seven dimensions, 100 points: runnability, secrets and config, failure handling and observability, tests and CI,
+        critical paths, dependencies, and knowledge capture. Code computes the score; the LLM never grades.
+      </p>
+
+      <h2>FAQ</h2>
+      <dl>
+        <dt>Does it store private code?</dt>
+        <dd>No by default. The private path is the local CLI with your own key.</dd>
+        <dt>Can I publish a score?</dt>
+        <dd>Only opt-in. Third-party reports are noindex by default.</dd>
+        <dt>What if it cannot analyze something?</dt>
+        <dd>It says so in the report. Unknown beats a guess.</dd>
+      </dl>
+
+      <h2>Pro waitlist</h2>
       <form onSubmit={onSubmit}>
-        <input value={target} onChange={(event) => setTarget(event.target.value)} placeholder="https://github.com/owner/repo or local path" />
-        <button type="submit">Scan</button>
+        <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" type="email" required />
+        <button type="submit">Join waitlist</button>
       </form>
-      {error && <pre>{error}</pre>}
-      {job?.status === "running" && <p>Scanning...</p>}
-      {job?.status === "failed" && <pre>{job.error}</pre>}
-      {job?.status === "complete" && job.report && (
-        <section>
-          <h2>{job.report.score}/100 — {job.report.verdict}</h2>
-          <pre>{job.report.operateMd}</pre>
-        </section>
-      )}
+      {message && <p>{message}</p>}
     </main>
   );
 }

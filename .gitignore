@@ -10,3 +10,4 @@ coverage/
 tmp/
 *.tsbuildinfo
 .DS_Store
+apps/web/data/
