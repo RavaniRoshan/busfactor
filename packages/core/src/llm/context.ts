@@ -40,7 +40,7 @@ function scoreFile(filePath: string, size: number, findingsFiles: Set<string>): 
 export async function buildContext(
   snapshot: Snapshot,
   findingsFiles: string[] = [],
-  tokenBudget = 12_000,
+  tokenBudget = 5_000,
 ): Promise<BuiltContext> {
   const findingSet = new Set(findingsFiles);
   const ranked = snapshot.files

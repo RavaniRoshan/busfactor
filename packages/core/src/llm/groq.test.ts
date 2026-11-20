@@ -26,6 +26,7 @@ describe("GroqProvider", () => {
     const body = JSON.parse(init.body as string) as Record<string, unknown>;
     expect(body.model).toBe("openai/gpt-oss-20b");
     expect(body.max_completion_tokens).toBe(500);
+    expect(body.response_format).toEqual({ type: "json_object" });
     expect(body.messages).toEqual([
       { role: "system", content: "sys" },
       { role: "user", content: "user" },

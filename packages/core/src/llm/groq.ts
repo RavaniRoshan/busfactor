@@ -31,6 +31,7 @@ export class GroqProvider implements LLMProvider {
       body: JSON.stringify({
         model: this.model,
         max_completion_tokens: request.maxTokens ?? 1200,
+        response_format: { type: "json_object" },
         messages: [
           { role: "system", content: request.system },
           { role: "user", content: request.user },

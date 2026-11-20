@@ -81,7 +81,7 @@ export async function runLlmPasses(
 
   try {
     const text = await provider.complete({
-      system: `${SYSTEM_PROMPT} Return JSON with keys purpose, modules, entryPoints, dataStores, externalServices.`,
+      system: `${SYSTEM_PROMPT} Return ONLY a JSON object with keys purpose (string), modules (array of objects with name, path, purpose and evidence), entryPoints (array of strings), dataStores (array of strings), externalServices (array of strings). Example: {"purpose":"...","modules":[{"name":"...","path":"...","purpose":"...","evidence":[]}],"entryPoints":[],"dataStores":[],"externalServices":[]}.`,
       user: `${dataBlock(contextFiles)}\nProduce a repository map.`,
       maxTokens: 1200,
     });
@@ -92,7 +92,7 @@ export async function runLlmPasses(
 
   try {
     const text = await provider.complete({
-      system: `${SYSTEM_PROMPT} Return JSON with keys purpose and keyFlows.`,
+      system: `${SYSTEM_PROMPT} Return ONLY a JSON object with keys purpose (string) and keyFlows (array of strings). Example: {"purpose":"...","keyFlows":["..."]}.`,
       user: `${dataBlock(contextFiles)}\nDescribe the system's purpose and key flows.`,
       maxTokens: 800,
     });
@@ -105,7 +105,7 @@ export async function runLlmPasses(
   if (criticalPaths.length > 0) {
     try {
       const text = await provider.complete({
-        system: `${SYSTEM_PROMPT} Return JSON with key risks. Each risk must cite evidence.`,
+        system: `${SYSTEM_PROMPT} Return ONLY a JSON object with key risks (array). Each risk is an object with title, severity (one of critical/high/medium/low), message, recommendation and evidence (array of objects with file, lineStart, lineEnd and quote). Example: {"risks":[]}.`,
         user: `${dataBlock(contextFiles)}\nCritical paths: ${JSON.stringify(criticalPaths)}\nReview these paths for risk.`,
         maxTokens: 1200,
       });
@@ -133,7 +133,7 @@ export async function runLlmPasses(
 
   try {
     const text = await provider.complete({
-      system: `${SYSTEM_PROMPT} Return JSON with key questions. Each question must cite evidence.`,
+      system: `${SYSTEM_PROMPT} Return ONLY a JSON object with key questions (array). Each question is an object with question, why and evidence (array of objects with file, lineStart, lineEnd and quote). Example: {"questions":[]}.`,
       user: `${dataBlock(contextFiles)}\nList questions only the original author can answer.`,
       maxTokens: 1000,
     });
