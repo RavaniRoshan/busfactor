@@ -1,5 +1,14 @@
 # Decisions
 
+## 2026-11-20 — Autonomous verification harness
+
+- Decision: Build a deterministic local verification harness before any further UI improvements, from four research rounds plus adversarial verification (`research/autonomous-ui-verification-tooling.md`).
+- Branch taken: `pnpm verify` = build + `playwright test` with four suites: functional (Playwright), accessibility (`@axe-core/playwright`), layout (`overflowlint/playwright` plus custom geometry assertions), network/consent (Playwright request/storage capture). `pnpm gate` remains the unit gate and still passes (60 tests).
+- Why: the research rejected SaaS visual tools, LLM-assigned grades (forbidden by `AGENTS.md` §4.2/§13), immature 0-star vision frameworks, and the snap Chromium wrapper in favour of Playwright's bundled Chromium.
+- Ruling: the visually hidden skip link is a known `interactive-covered` false positive and is suppressed with `data-ol-ignore`; no other failures were suppressed. OverflowLint alone missed the mobile stacking defect, so a deterministic geometry assertion was added.
+- Evidence: final clean run 15 passed / 5 failed, all five genuine defects; axe measured active tab contrast 1.07:1; cache-hit polling returns 404; mobile body computes `display: flex` with header 484px scroll width in a 340px viewport; analytics script loads before consent.
+- Not a legal certification: keyboard focus order, screen-reader output, consent wording and jurisdiction-specific rules still require human review.
+
 ## 2026-11-20 — Operator dashboard and dashboard skills
 
 - Decision: Rebuild `/admin/metrics` as an operator dashboard organised around four questions — is it working, where does it fail, is it helping, what should I do.

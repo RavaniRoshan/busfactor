@@ -12,3 +12,6 @@ tmp/
 .DS_Store
 apps/web/data/
 .vercel
+playwright-results.json
+test-results/
+playwright-report/

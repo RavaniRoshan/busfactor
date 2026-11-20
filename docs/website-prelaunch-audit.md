@@ -87,6 +87,18 @@
 - Fix: add a register with exact package versions and licence URLs; verify Space UI components used are all Community/MIT.
 - Verify: grep installed components for Pro-only imports.
 
+## Deterministic verification harness (added after the first audit)
+
+A local, free, deterministic harness was built from multi-round research (`research/autonomous-ui-verification-tooling.md`) and runs with `pnpm verify`: Playwright Test for functional flows, `@axe-core/playwright` for computed contrast/ARIA, `overflowlint/playwright` for baseline-free geometry checks, and Playwright network/storage capture for consent behaviour. No LLM assigns pass/fail or severity.
+
+Final clean run: **15 passed, 5 failed**. All five failures are genuine product defects; the one known tool false positive (the off-screen skip link reported as `interactive-covered`) was explicitly suppressed with `data-ol-ignore`.
+
+- **AUD-08 — HIGH — cached scans produce an unusable job ID.** `POST /api/scan` returns a random `id` on a cache hit without writing it to the jobs store; the form then polls `GET /api/scan/:id` and receives 404, so the browser never reaches the report. Evidence: `tests/functional.spec.ts:89` and the form-flow test at `:25`; observed request `GET /api/scan/<id> → 404`. Fix: persist a job row on the cache path too.
+- **AUD-09 — HIGH — active report tab fails contrast.** axe-core measured foreground `#131922` on background `#1c1f26`, ratio **1.07:1** against a required 4.5:1 on `#rw-tab-verdict`. Evidence: `tests/accessibility.spec.ts:16`. This is a concrete measurement for AUD-05.
+- **AUD-10 — HIGH — mobile report does not stack.** At 390×844, `.rw-body` computes `display: flex` (Space UI Tabs utility overrides the scoped `.rw-body` grid), leaving nav at x=25 and content at x=205; header `scrollWidth 484 > clientWidth 340`. Evidence: `tests/layout.spec.ts:29` and screenshot `/home/shiva/tmp-audit/mobile-report-final.png`.
+- **AUD-03 (confirmed) — analytics before consent.** The harness observed `GET /_vercel/insights/script.js` on a clean `/scan` load with no consent UI (`tests/network.spec.ts:3`).
+- AUD-05's overlap remains a real visual defect even though `overflowlint` alone did not flag it; the custom geometry assertion now pins it. OverflowLint's blind spots are documented in `tests/README.md`.
+
 ## Tests run
 
 - `pnpm gate` — PASS (25 core + 35 web tests) at commit `1b38e2a`, re-run after final docs-only commit.

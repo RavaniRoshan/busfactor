@@ -1,6 +1,6 @@
 phase: MVP
 last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ 1b38e2a
-status: PASS
+status: PARTIAL
 gates:
   p0_bootstrap: pass
   url_ingest: stale
@@ -13,6 +13,7 @@ gates:
   web_persistence_code: pass (Neon adapter + async store API, 35 tests)
   report_workspace: pass (four-view dark workspace, no decorative backdrop, Space UI MIT primitives, 60 tests, fresh review Clean/approve)
   operator_dashboard: pass (real store data, 60 tests, token-gated; production token not set)
+  deterministic_verify: fail (pnpm verify: 15 pass / 5 genuine product defects; see docs/website-prelaunch-audit.md)
 env:
   pkg_manager: pnpm@10.15.0 (activated via corepack)
   node: v24.21.0
@@ -26,4 +27,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: [BUSFACTOR_ADMIN_TOKEN not set on Vercel — /admin/metrics shows Unauthorized]
-next: Gate A human demand test (posts + 5 stranger requests), then 10+ seed reports and live cost/p50 measurement. Gates A/B/C are not passed. A separate landing-page repo is owned by Roshan.
+next: Fix the 5 deterministic verification findings (cache-hit job, nav contrast 1.07:1, mobile stacking/header clipping, analytics before consent), re-run pnpm verify, then Gate A. Gates A/B/C are not passed.
