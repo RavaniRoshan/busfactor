@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { scanTarget } from "../../../../../packages/core/dist/index.js";
+import { scanTarget } from "@busfactor/core";
 import { jobs, makeSlug, rateLimits, reportCache, reports, spend } from "@/lib/store";
 
 function clientIp(request: Request): string {

@@ -1,5 +1,5 @@
 import { reports } from "@/lib/store";
-import { renderMarkdownReport } from "../../../../../../../packages/core/dist/index.js";
+import { renderMarkdownReport } from "@busfactor/core";
 
 export async function GET(_request: Request, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params;
