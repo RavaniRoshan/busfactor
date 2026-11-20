@@ -1,5 +1,5 @@
 import { reports } from "@/lib/store";
-import { renderMarkdownReport } from "@busfactor/core";
+
 
 export async function GET(_request: Request, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params;
@@ -7,7 +7,8 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
   if (!stored) {
     return new Response("not found", { status: 404 });
   }
-  const markdown = renderMarkdownReport(stored.report as never);
+  const core = await import("../../../../../../../packages/core/dist/index.js" /*turbopackIgnore: true*/);
+  const markdown = core.renderMarkdownReport(stored.report as never);
   return new Response(markdown, {
     headers: {
       "content-type": "text/markdown; charset=utf-8",

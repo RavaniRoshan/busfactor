@@ -301,8 +301,8 @@ export async function createSnapshotFromGitHub(
       `Could not resolve a commit for ${parsed.owner}/${parsed.repo}: ${commitResponse.status}`,
     );
   }
-  const commitJson = (await commitResponse.json()) as { sha?: string };
-  const sha = commitJson.sha;
+  const commitJson = (await commitResponse.json()) as { sha?: string } | Array<{ sha?: string }>;
+  const sha = Array.isArray(commitJson) ? commitJson[0]?.sha : commitJson.sha;
   if (typeof sha !== "string" || !/^[0-9a-f]{40}$/i.test(sha)) {
     throw new SnapshotError("github_sha_missing", "GitHub did not return a commit SHA");
   }

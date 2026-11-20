@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 
-import { scanTarget } from "@busfactor/core";
+
 import { jobs, makeSlug, rateLimits, reportCache, reports, spend } from "@/lib/store";
+
+export const maxDuration = 60;
 
 function clientIp(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
@@ -41,36 +43,28 @@ export async function POST(request: Request) {
   const cacheKey = rawTarget;
   const cached = reportCache.get(cacheKey) as { report: unknown; slug: string } | undefined;
   if (cached) {
-    const id = randomUUID();
-    jobs.set(id, { id, status: "complete", slug: cached.slug, report: cached.report, public: false });
-    return Response.json({ id, cached: true }, { status: 200 });
+    return Response.json({ id: randomUUID(), status: "complete", slug: cached.slug, report: cached.report, cached: true });
   }
-
-  const id = randomUUID();
-  jobs.set(id, { id, status: "running", public: false });
 
   const nodePath = await import("node:path");
   const target = /^https?:\/\//i.test(rawTarget)
     ? rawTarget
     : nodePath.resolve(/*turbopackIgnore: true*/ process.cwd(), "..", "..", rawTarget);
 
-  void (async () => {
-    try {
-      const { report } = await scanTarget(target, {});
-      const slug = makeSlug();
-      reports.set(slug, { slug, report, public: false });
-      reportCache.set(cacheKey, { slug, report });
-      spend.usd += Number((report as { meta?: { costUsd?: number } }).meta?.costUsd ?? 0);
-      jobs.set(id, { id, status: "complete", slug, report, public: false });
-    } catch (error) {
-      jobs.set(id, {
-        id,
-        status: "failed",
-        public: false,
-        error: error instanceof Error ? `${error.message}\n${error.stack ?? ""}` : String(error),
-      });
-    }
-  })();
-
-  return Response.json({ id }, { status: 202 });
+  try {
+    const core = await import("../../../../../packages/core/dist/index.js" /*turbopackIgnore: true*/);
+    const { report } = await core.scanTarget(target, {});
+    const slug = makeSlug();
+    reports.set(slug, { slug, report, public: false });
+    reportCache.set(cacheKey, { slug, report });
+    spend.usd += Number((report as { meta?: { costUsd?: number } }).meta?.costUsd ?? 0);
+    const id = randomUUID();
+    jobs.set(id, { id, status: "complete", slug, report, public: false });
+    return Response.json({ id, status: "complete", slug, report });
+  } catch (error) {
+    return Response.json(
+      { error: error instanceof Error ? error.message : String(error) },
+      { status: 500 },
+    );
+  }
 }
