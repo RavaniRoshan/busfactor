@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: P2.6 @ 9a3c93c
+last_prompt: P2.7 @ 550b9ed
 status: PASS
 gates:
   p0_bootstrap: pass
@@ -19,4 +19,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: []
-next: P2.7 because feedback and admin metrics are implemented
+next: P2.8 because security pass and dependency audit are clean
