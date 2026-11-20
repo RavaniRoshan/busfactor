@@ -1,17 +1,18 @@
 phase: MVP
-last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ efd3130
+last_prompt: P2.5 (explicit user override; Gate A still unvalidated) @ 1b38e2a
 status: PASS
 gates:
   p0_bootstrap: pass
   url_ingest: stale
   llm_live: stale
   gate_a: not_started
-  web_deploy: pass (production, dpl_Cd4AayCjE5QyNZDSM14D5zyuBAhm, 20 Nov 2026; remote main synced)
+  web_deploy: pass (production, dpl_8jCa5D8jpDF6bsLTF1Mrkn939P2V, 20 Nov 2026; remote main synced)
   web_navigation: pass (app shell: / → /scan ↔ /docs ↔ /r/:slug)
   web_landing_removed: pass (no landing artifacts in webapp or repo)
   web_scan_e2e: pass (production POST 200 → report 200 → badge 200, deployment dpl_FinFhuyAXwfJqFXzvpef4xYb8KiM)
   web_persistence_code: pass (Neon adapter + async store API, 35 tests)
-  report_workspace: pass (four-view dark workspace, no decorative backdrop, Space UI MIT primitives, 55 tests, fresh review Clean/approve)
+  report_workspace: pass (four-view dark workspace, no decorative backdrop, Space UI MIT primitives, 60 tests, fresh review Clean/approve)
+  operator_dashboard: pass (real store data, 60 tests, token-gated; production token not set)
 env:
   pkg_manager: pnpm@10.15.0 (activated via corepack)
   node: v24.21.0
@@ -24,5 +25,5 @@ measured:
   citation_drop_rate: null
   gold_agreement: null
   seed_repos_scanned: 0
-open_blockers: []
+open_blockers: [BUSFACTOR_ADMIN_TOKEN not set on Vercel — /admin/metrics shows Unauthorized]
 next: Gate A human demand test (posts + 5 stranger requests), then 10+ seed reports and live cost/p50 measurement. Gates A/B/C are not passed. A separate landing-page repo is owned by Roshan.

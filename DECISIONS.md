@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-11-20 — Operator dashboard and dashboard skills
+
+- Decision: Rebuild `/admin/metrics` as an operator dashboard organised around four questions — is it working, where does it fail, is it helping, what should I do.
+- Branch taken: `lib/ops-summary.ts` computes job status counts/fail rate and feedback yes/no from real store rows; `store.jobs.values()` added to both memory and Neon KV implementations; server-rendered CSS bars replace Chart.js.
+- Why: Roshan invoked `dashboard-builder` and installed `build-dashboard`. That skill emits a standalone HTML file with CDN Chart.js, which conflicts with this app's `connect-src 'self'` CSP and the project rule against invented data. The operator-question method was kept; the format was adapted to the app. Recorded as a deviation, not a skill failure.
+- Evidence: `pnpm gate` passes (25 core + 35 web tests); authorized render verified locally with a temporary test token (all four section headings, provisional 5% threshold note); production `dpl_8jCa5D8jpDF6bsLTF1Mrkn939P2V` scan 200 → report 200, root 307 → `/scan`.
+- Open: `BUSFACTOR_ADMIN_TOKEN` is not set on Vercel, so production `/admin/metrics` correctly shows Unauthorized. Roshan must set the secret before the dashboard is usable in production. No token was invented or committed.
+
 ## 2026-11-20 — Report panel cleanup and dashboard skills
 
 - Decision: Remove the scenic backdrop from the report workspace and stop Base UI from warning about link-based nav tabs.
