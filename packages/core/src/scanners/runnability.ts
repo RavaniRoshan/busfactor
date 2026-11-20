@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { Finding, Scanner, Snapshot } from "../types.js";
+import type { Finding, Scanner } from "../types.js";
 
 function makeFinding(file: string, ruleId: string, severity: Finding["severity"], message: string, quote: string): Finding {
   return {

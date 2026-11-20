@@ -1,9 +1,7 @@
-import { z } from "zod";
 
 import type { Finding, Snapshot } from "../types.js";
 import { buildContext } from "./context.js";
 import type { LLMProvider } from "./provider.js";
-import { extractJson } from "./provider.js";
 import {
   authorQuestionsSchema,
   intentSchema,

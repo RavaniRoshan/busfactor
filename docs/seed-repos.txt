@@ -1,0 +1,15 @@
+# Seed repositories for Gate A.
+#
+# Add one repository per line. Use only repositories you own, have volunteer
+# consent for, or will run privately. Format:
+#   https://github.com/owner/repo
+# or a local path for private runs.
+#
+# Gate A requires findings from 5-10 repositories and at least 5 strangers asking
+# to run BusFactor on their own repository.
+
+# Examples (local fixtures only; not for publication):
+# fixtures/repos/clean
+# fixtures/repos/mid
+# fixtures/repos/bad
+# fixtures/repos/hostile

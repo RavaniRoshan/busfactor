@@ -12,4 +12,5 @@ export * from "./llm/citation.js";
 export * from "./llm/passes.js";
 export * from "./scan.js";
 export * from "./operate.js";
+export * from "./render.js";
 export * from "./llm/mock.js";

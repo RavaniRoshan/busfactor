@@ -6,7 +6,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   SnapshotError,
-  createSnapshot,
   createSnapshotFromGitHub,
   createSnapshotFromLocal,
 } from "./snapshot.js";

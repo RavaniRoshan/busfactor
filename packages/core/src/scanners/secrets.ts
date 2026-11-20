@@ -118,7 +118,7 @@ async function scanFile(snapshot: Snapshot, file: string): Promise<Finding[]> {
       }
     }
 
-    for (const match of line.matchAll(PRIVATE_KEY_REGEX)) {
+    for (const _ of line.matchAll(PRIVATE_KEY_REGEX)) {
       findings.push(
         makeFinding(
           snapshot,

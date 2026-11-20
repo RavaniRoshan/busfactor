@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: P1.4 @ 5124004
+last_prompt: P1.6 @ 0d152a5
 status: PASS
 gates:
   p0_bootstrap: pass
@@ -19,4 +19,4 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
 open_blockers: []
-next: P1.5 because scoring is deterministic and fixtures order correctly
+next: P1.7 because LLM passes and OPERATE.md are implemented and tested

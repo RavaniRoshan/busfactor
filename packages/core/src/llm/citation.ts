@@ -1,4 +1,3 @@
-import path from "node:path";
 
 import type { Evidence, Snapshot } from "../types.js";
 import { extractJson } from "./provider.js";

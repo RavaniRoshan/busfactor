@@ -1,5 +1,4 @@
 import { fileURLToPath } from "node:url";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { createDefaultScanners } from "./scanners/index.js";

@@ -7,7 +7,7 @@ import path from "node:path";
 import * as tar from "tar";
 
 import { detectStack, isBinaryPath, languageForPath } from "./detection.js";
-import type { Snapshot, SnapshotData, SnapshotFile, SnapshotOptions, Stack } from "./types.js";
+import type { Snapshot, SnapshotData, SnapshotFile, SnapshotOptions } from "./types.js";
 
 const execFileAsync = promisify(execFile);
 
