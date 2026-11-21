@@ -34,7 +34,7 @@ describe("ReportWindow", () => {
     const html = renderToStaticMarkup(<ReportWindow report={fixture} slug="abc123" view="verdict" />);
     expect(html).toContain("report-window");
     expect(html).toContain("abc123");
-    expect(html).toContain("64/100");
+    expect(html).toContain(">64</span>/100");
     for (const view of ["verdict", "risks", "operate", "questions"]) {
       expect(html).toContain(`/r/abc123?view=${view}`);
     }

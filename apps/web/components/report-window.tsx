@@ -1,3 +1,4 @@
+import { AnimatedNumber } from "@/components/animated-number";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { Toolbar, ToolbarLink } from "@/components/ui/toolbar";
@@ -43,7 +44,7 @@ export function ReportWindow({ report, slug, view }: { report: Report; slug: str
         </div>
         <div className="flex shrink-0 flex-col items-end gap-xs">
           <span className="text-label-sm text-text-secondary">
-            Score <span className="font-mono tabular-nums">{report.score}/100</span>
+            Score <span className="font-mono"><AnimatedNumber value={report.score} />/100</span>
           </span>
           <span className="rw-provenance font-mono text-[0.625rem] text-text-tertiary">
             SHA {report.meta.sha} · Engine {report.meta.engineVersion} · Rubric {report.meta.rubricVersion}

@@ -3,6 +3,7 @@ import path from "node:path";
 import { store, type ScanJob } from "@/lib/store";
 import { summarizeFeedback, summarizeJobs } from "@/lib/ops-summary";
 import { Badge } from "@/components/ui/badge";
+import { AnimatedNumber } from "@/components/animated-number";
 
 async function readJsonArray(filePath: string): Promise<unknown[]> {
   try {
@@ -19,7 +20,7 @@ function Kpi({ label, value, unit, note }: { label: string; value: string | numb
     <div className="rounded-corner-lg border border-border-secondary bg-surface-secondary-bg p-xl">
       <p className="text-label-sm text-text-secondary">{label}</p>
       <p className="mt-sm flex items-baseline gap-sm">
-        <span className="font-mono type-display tabular-nums text-text-primary">{value}</span>
+        <span className="font-mono type-display text-text-primary"><AnimatedNumber value={typeof value === "number" ? value : Number(value.replace("%",""))} />{typeof value === "string" && value.includes("%") ? "%" : ""}</span>
         <span className="text-label-sm text-text-secondary">{unit}</span>
       </p>
       {note && <p className="mt-sm text-label-sm text-text-secondary">{note}</p>}

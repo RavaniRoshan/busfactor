@@ -57,6 +57,27 @@ describe("webapp shell", () => {
     expect(page).toContain("robots: { index: false, follow: false }");
   });
 
+  it("shows honest loading states and honours reduced motion", () => {
+    const css = readFileSync(path.join(root, "app/globals.css"), "utf8");
+    const form = readFileSync(path.join(root, "components/scan-form.tsx"), "utf8");
+    const progress = readFileSync(path.join(root, "components/scan-progress.tsx"), "utf8");
+    expect(css).toContain("@keyframes ui-spin");
+    expect(css).toContain("prefers-reduced-motion: reduce");
+    expect(form).toContain("ScanProgress");
+    expect(progress).toContain("Elapsed {seconds}s");
+    expect(progress).not.toMatch(/\d+\s*%/);
+    for (const file of ["app/scan/loading.tsx", "app/r/[slug]/loading.tsx"]) {
+      expect(existsSync(path.join(root, file))).toBe(true);
+    }
+  });
+
+  it("animates only real numbers, never generated scores", () => {
+    const report = readFileSync(path.join(root, "components/report-window.tsx"), "utf8");
+    expect(report).toContain("AnimatedNumber");
+    expect(report).toContain("value={report.score}");
+    expect(report).not.toMatch(/score\s*=\s*\d+/);
+  });
+
   it("keeps the operator dashboard answer-first and noindex", () => {
     const page = readFileSync(path.join(root, "app/admin/metrics/page.tsx"), "utf8");
     expect(page).toContain("robots: { index: false, follow: false }");
