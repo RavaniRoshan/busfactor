@@ -22,3 +22,24 @@ it("reads rates from a provider/model JSON map", () => {
   const raw = JSON.stringify({ "groq/openai/gpt-oss-20b": { inputPerMTokUsd: 1, outputPerMTokUsd: 2 } });
   expect(rateFor(usage, raw)).toEqual({ inputPerMTokUsd: 1, outputPerMTokUsd: 2 });
 });
+
+it("returns undefined for malformed BUSFACTOR_LLM_RATES_JSON", () => {
+  expect(rateFor(usage, "{not json")).toBeUndefined();
+});
+
+it("returns undefined for missing provider/model key", () => {
+  const raw = JSON.stringify({ "groq/other-model": { inputPerMTokUsd: 1, outputPerMTokUsd: 2 } });
+  expect(rateFor(usage, raw)).toBeUndefined();
+});
+
+it("returns undefined for invalid rate shapes", () => {
+  const cases = [
+    JSON.stringify({ "groq/openai/gpt-oss-20b": "not-an-object" }),
+    JSON.stringify({ "groq/openai/gpt-oss-20b": { inputPerMTokUsd: -1, outputPerMTokUsd: 2 } }),
+    JSON.stringify({ "groq/openai/gpt-oss-20b": { inputPerMTokUsd: 1, outputPerMTokUsd: "2" } }),
+    JSON.stringify({ "groq/openai/gpt-oss-20b": { inputPerMTokUsd: 1 } }),
+  ];
+  for (const raw of cases) {
+    expect(rateFor(usage, raw)).toBeUndefined();
+  }
+});

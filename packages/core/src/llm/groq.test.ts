@@ -74,4 +74,17 @@ describe("GroqProvider", () => {
       requests: 2,
     });
   });
+
+  it("increments requests and reports zero tokens when usage is missing", async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse({ choices: [{ message: { content: "{}" } }] }));
+    const provider = new GroqProvider({ apiKey: "k", fetchImpl });
+    await provider.complete({ system: "s", user: "u" });
+    expect(provider.getUsage()).toMatchObject({
+      provider: "groq",
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedTokens: 0,
+      requests: 1,
+    });
+  });
 });

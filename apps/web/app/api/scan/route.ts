@@ -52,23 +52,29 @@ export async function POST(request: Request) {
   try {
     const cached = await store.reportCache.get(rawTarget);
     if (cached) {
-      await scanJobs.complete(id, {
-        reportSlug: cached.slug,
-        durationMs: 0,
-        cacheHit: true,
-        costUsd: 0,
-        model: null,
-        engineVersion: ENGINE_VERSION,
-        rubricVersion: RUBRIC_VERSION,
-        promptVersion: PROMPT_VERSION,
-      });
-      return Response.json({
-        id,
-        status: "complete",
-        slug: cached.slug,
-        report: cached.report,
-        cached: true,
-      });
+      const cachedMeta = (cached.report as { meta?: { promptVersion?: unknown; usage?: unknown } }).meta;
+      const isCompatibleCache =
+        cachedMeta?.promptVersion === PROMPT_VERSION && cachedMeta?.usage != null;
+      if (isCompatibleCache) {
+        await scanJobs.complete(id, {
+          reportSlug: cached.slug,
+          durationMs: 0,
+          cacheHit: true,
+          costUsd: 0,
+          model: null,
+          engineVersion: ENGINE_VERSION,
+          rubricVersion: RUBRIC_VERSION,
+          promptVersion: PROMPT_VERSION,
+        });
+        return Response.json({
+          id,
+          status: "complete",
+          slug: cached.slug,
+          report: cached.report,
+          cached: true,
+        });
+      }
+      // Stale legacy cache entry: ignore and rescan; successful rescan overwrites it.
     }
 
     const nodePath = await import("node:path");
