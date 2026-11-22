@@ -156,6 +156,53 @@ describe("POST /api/scan cache-path failure handling", () => {
     );
   });
 
+  it("returns safe 500 without creating a job when spend reservation throws", async () => {
+    vi.mocked(store.reportCache.get).mockResolvedValue(undefined);
+    vi.mocked(spendStore.reserve).mockRejectedValueOnce(new Error("db exploded with secrets"));
+
+    const request = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ target: "https://github.com/example/repo" }),
+    });
+
+    const response = await POST(request);
+    const body = (await response.json()) as { error?: string; category?: string };
+
+    expect(response.status).toBe(500);
+    expect(scanJobs.create).not.toHaveBeenCalled();
+    expect(scanJobs.fail).not.toHaveBeenCalled();
+    expect(scanTargetMock).not.toHaveBeenCalled();
+    expect(spendStore.settle).not.toHaveBeenCalled();
+    expect(body.category).toBe("internal_error");
+    expect(body.error).toBe("Internal scan error.");
+    expect(body.error).not.toContain("secrets");
+  });
+
+  it("settles reservation to 0 and returns safe error when job create throws after reservation", async () => {
+    vi.mocked(store.reportCache.get).mockResolvedValue(undefined);
+    vi.mocked(spendStore.reserve).mockResolvedValueOnce({ ok: true, usd: 0.05 });
+    vi.mocked(scanJobs.create).mockRejectedValueOnce(new Error("job create failed with secrets"));
+
+    const request = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ target: "https://github.com/example/repo" }),
+    });
+
+    const response = await POST(request);
+    const body = (await response.json()) as { error?: string; category?: string };
+
+    expect(response.status).toBe(500);
+    expect(spendStore.reserve).toHaveBeenCalledWith("2026-11-22", 0.05, 10);
+    expect(spendStore.settle).toHaveBeenCalledWith("2026-11-22", 0.05, 0);
+    expect(scanJobs.fail).not.toHaveBeenCalled();
+    expect(scanTargetMock).not.toHaveBeenCalled();
+    expect(body.category).toBe("internal_error");
+    expect(body.error).toBe("Internal scan error.");
+    expect(body.error).not.toContain("secrets");
+  });
+
   it("treats legacy cached report without promptVersion/usage as cache miss and rescans", async () => {
     const legacyCachedReport = {
       score: 50,

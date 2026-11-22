@@ -109,7 +109,14 @@ export async function POST(request: Request) {
   const cap = spendCapUsd();
   const reserveAmount = reservationUsd();
   const day = utcDay();
-  const reservation = await spendStore.reserve(day, reserveAmount, cap);
+  let reservation: { ok: boolean; usd: number };
+  try {
+    reservation = await spendStore.reserve(day, reserveAmount, cap);
+  } catch (error) {
+    const category = categorizeScanError(error);
+    const status = category === "provider_error" ? 503 : 500;
+    return Response.json({ error: safeErrorMessage(category), category }, { status });
+  }
   if (!reservation.ok) {
     return Response.json({ error: "daily spend cap reached" }, { status: 503 });
   }
@@ -117,12 +124,19 @@ export async function POST(request: Request) {
   // 5. Only after a successful reservation, create the running job and scan.
   const id = randomUUID();
   const startedAt = Date.now();
-  await scanJobs.create({
-    id,
-    engineVersion: ENGINE_VERSION,
-    rubricVersion: RUBRIC_VERSION,
-    promptVersion: PROMPT_VERSION,
-  });
+  try {
+    await scanJobs.create({
+      id,
+      engineVersion: ENGINE_VERSION,
+      rubricVersion: RUBRIC_VERSION,
+      promptVersion: PROMPT_VERSION,
+    });
+  } catch (error) {
+    await settleReservation(day, reserveAmount, 0, cap);
+    const category = categorizeScanError(error);
+    const status = category === "provider_error" ? 503 : 500;
+    return Response.json({ error: safeErrorMessage(category), category }, { status });
+  }
 
   try {
     const nodePath = await import("node:path");
