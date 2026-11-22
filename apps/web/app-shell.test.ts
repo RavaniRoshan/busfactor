@@ -84,7 +84,9 @@ describe("webapp shell", () => {
     for (const question of ["Is it working?", "Where does it fail?", "Is it helping?", "What should I do?"]) {
       expect(page).toContain(question);
     }
-    expect(page).toContain("store.jobs.values()");
+    expect(page).toContain("scanJobs.list(20)");
+    expect(page).toContain("scanJobs.metrics(30)");
+    expect(page).not.toContain("store.jobs.values()");
   });
 
   it("allows eval only in the development CSP", () => {

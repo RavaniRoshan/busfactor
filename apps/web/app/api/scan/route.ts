@@ -1,9 +1,14 @@
 import { randomUUID } from "node:crypto";
 
-import { makeSlug, store } from "@/lib/store";
 import { hashIp } from "@/lib/ip";
+import { categorizeScanError, safeErrorMessage, scanJobs } from "@/lib/scan-jobs";
+import { makeSlug, store } from "@/lib/store";
 
 export const maxDuration = 60;
+
+const ENGINE_VERSION = "0.1.0";
+const RUBRIC_VERSION = "0.1.0";
+const PROMPT_VERSION = "0.1.0";
 
 function clientIp(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
@@ -35,19 +40,29 @@ export async function POST(request: Request) {
     return Response.json({ error: "daily spend cap reached" }, { status: 503 });
   }
 
+  const id = randomUUID();
+  const startedAt = Date.now();
+  await scanJobs.create({
+    id,
+    engineVersion: ENGINE_VERSION,
+    rubricVersion: RUBRIC_VERSION,
+    promptVersion: PROMPT_VERSION,
+  });
+
   const cached = await store.reportCache.get(rawTarget);
   if (cached) {
-    // A cache hit still needs a queryable job: the scan form polls /api/scan/:id.
-    const cachedId = randomUUID();
-    await store.jobs.set(cachedId, {
-      id: cachedId,
-      status: "complete",
-      slug: cached.slug,
-      report: cached.report,
-      public: false,
+    await scanJobs.complete(id, {
+      reportSlug: cached.slug,
+      durationMs: 0,
+      cacheHit: true,
+      costUsd: 0,
+      model: null,
+      engineVersion: ENGINE_VERSION,
+      rubricVersion: RUBRIC_VERSION,
+      promptVersion: PROMPT_VERSION,
     });
     return Response.json({
-      id: cachedId,
+      id,
       status: "complete",
       slug: cached.slug,
       report: cached.report,
@@ -66,14 +81,26 @@ export async function POST(request: Request) {
     const slug = makeSlug();
     await store.reports.set(slug, { slug, report, public: false });
     await store.reportCache.set(rawTarget, { slug, report });
-    await store.spend.add(Number((report as { meta?: { costUsd?: number } }).meta?.costUsd ?? 0));
-    const id = randomUUID();
-    await store.jobs.set(id, { id, status: "complete", slug, report, public: false });
+    const costUsd = Number((report as { meta?: { costUsd?: number } }).meta?.costUsd ?? 0);
+    await store.spend.add(costUsd);
+    const model =
+      typeof (report as { meta?: { model?: unknown } }).meta?.model === "string"
+        ? ((report as { meta?: { model?: string } }).meta?.model ?? null)
+        : null;
+    await scanJobs.complete(id, {
+      reportSlug: slug,
+      durationMs: Date.now() - startedAt,
+      cacheHit: false,
+      costUsd,
+      model,
+      engineVersion: ENGINE_VERSION,
+      rubricVersion: RUBRIC_VERSION,
+      promptVersion: PROMPT_VERSION,
+    });
     return Response.json({ id, status: "complete", slug, report });
   } catch (error) {
-    return Response.json(
-      { error: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
-    );
+    const category = categorizeScanError(error);
+    await scanJobs.fail(id, { errorCategory: category, durationMs: Date.now() - startedAt });
+    return Response.json({ error: safeErrorMessage(category), category }, { status: 500 });
   }
 }

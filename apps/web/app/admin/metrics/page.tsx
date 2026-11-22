@@ -1,6 +1,6 @@
 import { records } from "@/lib/records";
-import { store, type ScanJob } from "@/lib/store";
-import { summarizeJobs } from "@/lib/ops-summary";
+import { scanJobs } from "@/lib/scan-jobs";
+import { store } from "@/lib/store";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedNumber } from "@/components/animated-number";
 
@@ -44,14 +44,14 @@ export default async function AdminMetricsPage({
     );
   }
 
-  const [waitlistCount, validation, jobs, reportCount] = await Promise.all([
+  const [waitlistCount, validation, jobs, health, reportCount] = await Promise.all([
     records.countWaitlist(),
     records.feedbackSummary(),
-    store.jobs.values(),
+    scanJobs.list(20),
+    scanJobs.metrics(30),
     store.reports.count(),
   ]);
 
-  const health = summarizeJobs(jobs as ScanJob[]);
   const action =
     health.failed > 0
       ? "Review the failed scan IDs below before inviting new users."
@@ -149,11 +149,11 @@ export default async function AdminMetricsPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {jobs.slice(0, 20).map((job) => (
+                    {jobs.map((job) => (
                       <tr key={job.id} className="border-b border-border-secondary last:border-0">
                         <td className="py-sm pr-lg font-mono text-xs">{job.id}</td>
                         <td className="py-sm pr-lg">{job.status}</td>
-                        <td className="py-sm font-mono text-xs">{job.slug ?? "—"}</td>
+                        <td className="py-sm font-mono text-xs">{job.reportSlug ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>

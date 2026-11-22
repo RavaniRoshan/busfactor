@@ -61,6 +61,42 @@ export async function ensureSchema(): Promise<void> {
         CREATE INDEX IF NOT EXISTS report_feedback_created_at_idx
           ON report_feedback (created_at DESC);`
       );
+      await p.query(
+        `CREATE TABLE IF NOT EXISTS scan_jobs (
+          id text PRIMARY KEY,
+          status text NOT NULL CHECK (status IN ('running','complete','failed')),
+          created_at timestamptz NOT NULL DEFAULT now(),
+          started_at timestamptz NOT NULL DEFAULT now(),
+          completed_at timestamptz,
+          duration_ms integer,
+          report_slug text,
+          error_category text,
+          cache_hit boolean NOT NULL DEFAULT false,
+          model text,
+          engine_version text NOT NULL DEFAULT '',
+          rubric_version text NOT NULL DEFAULT '',
+          prompt_version text NOT NULL DEFAULT '',
+          cost_usd double precision NOT NULL DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS scan_jobs_created_at_idx ON scan_jobs (created_at DESC);
+        CREATE INDEX IF NOT EXISTS scan_jobs_status_idx ON scan_jobs (status);`
+      );
+      await p.query(
+        `CREATE TABLE IF NOT EXISTS scan_costs (
+          id bigserial PRIMARY KEY,
+          scan_id text NOT NULL REFERENCES scan_jobs(id) ON DELETE CASCADE,
+          provider text NOT NULL DEFAULT '',
+          model text NOT NULL DEFAULT '',
+          input_tokens integer NOT NULL DEFAULT 0,
+          output_tokens integer NOT NULL DEFAULT 0,
+          cached_tokens integer NOT NULL DEFAULT 0,
+          requests integer NOT NULL DEFAULT 0,
+          cost_usd double precision NOT NULL DEFAULT 0,
+          created_at timestamptz NOT NULL DEFAULT now()
+        );
+        CREATE INDEX IF NOT EXISTS scan_costs_scan_id_idx ON scan_costs (scan_id);
+        CREATE INDEX IF NOT EXISTS scan_costs_created_at_idx ON scan_costs (created_at DESC);`
+      );
     })();
   }
   return ready;
