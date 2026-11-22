@@ -18,7 +18,7 @@ vi.mock("@/lib/store", () => ({
 }));
 
 import { POST, DELETE } from "./route";
-import { ADMIN_COOKIE, signSession, verifySession } from "@/lib/admin-auth";
+import { ADMIN_COOKIE, verifySession } from "@/lib/admin-auth";
 import { store } from "@/lib/store";
 
 const ORIGINAL_TOKEN = process.env.BUSFACTOR_ADMIN_TOKEN;
