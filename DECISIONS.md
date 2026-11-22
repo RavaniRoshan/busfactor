@@ -122,3 +122,18 @@
 - Alternatives rejected: npm workspaces (would diverge from the documented commands); installing pnpm globally with npm (unnecessary global mutation).
 - Environment note: No `ANTHROPIC_API_KEY` is present. Live LLM gates are marked `stale`; implementation will use the mock provider until a key is available.
 - Scope note: `apps/web` is intentionally only a typed shell at P0.1. The web surface belongs to P1.8 and remains gated by Gate A.
+
+## 2026-11-22 — Task 11 (Full Verification, Documentation, and Handoff)
+
+- Decision: Run full Task 11 verification across main and marketing worktrees, record actual results, update project state/docs, and copy the session plan into the repository. No deployment, no push to main, no npm publish.
+- Branch taken: Executed required main commands (`pnpm install --frozen-lockfile`, `pnpm gate`, `pnpm verify:build`, `pnpm verify`) and marketing commands (`npm ci --legacy-peer-deps`, `npm test`, `npm run typecheck`, `npm run build`, robots/sitemap/CTA checks). Ran local security scenarios against `next start` on :3199 with controlled env vars; recorded observed HTTP statuses/bodies. Marked PostHog live verification BLOCKED due missing keys.
+- Why: The Task 11 brief requires evidence-based handoff and forbids inventing verification results or performing human-gated deployment/publication actions.
+- Evidence:
+  - Main install: PASS (`pnpm install --frozen-lockfile`, lockfile up to date, pnpm v10.15.0).
+  - Main gate: PASS (`pnpm gate` = typecheck+lint+test). Tests: `packages/core` 14 files/48 tests passed; `apps/web` 19 files/91 tests passed.
+  - Main verify:build: PASS (Next build compiled, 16/16 static pages generated).
+  - Main verify: FAIL (Playwright 20 passed / 1 failed / 21 total). Failing: `tests/functional.spec.ts:68 "API gates reject invalid input and protect admin metrics"` expects authenticated `/admin/metrics` text to contain `"BusFactor operations"`, but current page heading is `"BusFactor KPI dashboard"` (`apps/web/app/admin/metrics/page.tsx:281`). Treated as stale test expectation; not changed in Task 11.
+  - Marketing: PASS install/test/typecheck/build/robots. `npm ci --legacy-peer-deps` reported 2 high severity audit warnings; vitest 1 file/3 tests passed; `tsc --noEmit` passed; Vite build passed. `dist/robots.txt` contains sitemap. Scan CTA URL not in static `dist/index.html` but present in built JS/source (`VITE_APP_URL` default `https://heir-weld.vercel.app`).
+  - Local security scenarios (actual): local path `fixtures/repos/clean` -> 400 `invalid_input`; `http://169.254.169.254/latest/meta-data` -> 400 `invalid_input`; `https://github.com.evil.com/a/b` -> 400 `invalid_input`; `GET /admin/metrics?token=test-admin-token` without cookie -> 307 `Location: /admin/login`; feedback missing slug -> 404 `{"error":"report not found"}`; kill switch server (`BUSFACTOR_KILL_SWITCH=1`) POST `/api/scan` public repo -> 503 `{"error":"scans are temporarily disabled","category":"unavailable"}`.
+  - Analytics live verification: BLOCKED: PostHog keys not supplied.
+- Alternatives rejected: Modifying the failing Playwright assertion or dashboard heading to force green (would be out of Task 11 scope and hide a real mismatch); fabricating PostHog live-event evidence; running deployment/publish commands.
