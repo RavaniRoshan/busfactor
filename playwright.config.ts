@@ -29,6 +29,7 @@ export default defineConfig({
     env: {
       BUSFACTOR_ADMIN_TOKEN: "audit-test-token",
       BUSFACTOR_ALLOW_LOCAL_TARGETS: "1",
+      PLAYWRIGHT_TEST: "1",
     },
   },
 });

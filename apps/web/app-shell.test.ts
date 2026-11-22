@@ -78,7 +78,7 @@ describe("webapp shell", () => {
     expect(report).not.toMatch(/score\s*=\s*\d+/);
   });
 
-  it("keeps the operator dashboard answer-first and noindex", () => {
+  it("keeps the operator dashboard answer-first, noindex, and session-protected", () => {
     const page = readFileSync(path.join(root, "app/admin/metrics/page.tsx"), "utf8");
     expect(page).toContain("robots: { index: false, follow: false }");
     for (const question of ["Is it working?", "Where does it fail?", "Is it helping?", "What should I do?"]) {
@@ -87,6 +87,10 @@ describe("webapp shell", () => {
     expect(page).toContain("scanJobs.list(20)");
     expect(page).toContain("scanJobs.metrics(30)");
     expect(page).not.toContain("store.jobs.values()");
+    expect(page).toContain("isAdminRequest");
+    expect(page).toContain('redirect("/admin/login")');
+    expect(page).not.toContain("searchParams");
+    expect(page).not.toContain("BUSFACTOR_ADMIN_TOKEN");
   });
 
   it("allows eval only in the development CSP", () => {

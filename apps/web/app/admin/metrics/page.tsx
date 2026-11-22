@@ -1,8 +1,11 @@
+import { redirect } from "next/navigation";
+import { isAdminRequest } from "@/lib/admin-auth";
 import { records } from "@/lib/records";
 import { scanJobs } from "@/lib/scan-jobs";
 import { store } from "@/lib/store";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedNumber } from "@/components/animated-number";
+import { AdminLogoutButton } from "./logout-button";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -28,20 +31,9 @@ function Section({ id, title, children }: { id: string; title: string; children:
   );
 }
 
-export default async function AdminMetricsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ token?: string }>;
-}) {
-  const { token } = await searchParams;
-  if (token !== process.env.BUSFACTOR_ADMIN_TOKEN || !process.env.BUSFACTOR_ADMIN_TOKEN) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-brand-tertiary p-xl text-text-primary">
-        <div className="rounded-corner-lg border border-border-secondary bg-surface-secondary-bg p-2xl text-center">
-          <h1 className="type-display">Unauthorized</h1>
-        </div>
-      </main>
-    );
+export default async function AdminMetricsPage() {
+  if (!(await isAdminRequest())) {
+    redirect("/admin/login");
   }
 
   const [waitlistCount, validation, jobs, health, reportCount] = await Promise.all([
@@ -75,7 +67,10 @@ export default async function AdminMetricsPage({
               Scans, reports and validation signal. All numbers come from the live store and durable records.
             </p>
           </div>
-          <Badge variant="warning">Internal · noindex</Badge>
+          <div className="flex items-center gap-md">
+            <Badge variant="warning">Internal · noindex</Badge>
+            <AdminLogoutButton />
+          </div>
         </div>
 
         <div className="mt-3xl grid gap-xl sm:grid-cols-2 lg:grid-cols-4">
