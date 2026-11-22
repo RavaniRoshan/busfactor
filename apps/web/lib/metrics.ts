@@ -1,5 +1,13 @@
 import type { ScanJob } from "./scan-jobs";
 
+export interface AnalyticsVisitor {
+  distinctId: string;
+  firstSeen: string;
+  lastSeen: string;
+  events: number;
+  scans: number;
+}
+
 export interface AnalyticsSummary {
   available: boolean;
   visitors: number | null;
@@ -14,6 +22,7 @@ export interface AnalyticsSummary {
   breakdownsAvailable: boolean;
   campaigns: Array<{ campaign: string; visitors: number }>;
   sources: Array<{ source: string; visitors: number }>;
+  recentVisitors: AnalyticsVisitor[];
 }
 
 export interface DashboardMetricsInput {
@@ -37,6 +46,7 @@ export interface DashboardMetrics {
     feedbackAnswers: number;
     payingCustomers: null;
     mrrUsd: null;
+    recentVisitors: AnalyticsVisitor[];
   };
   acquisition: {
     available: boolean;
@@ -162,6 +172,7 @@ export function buildDashboardMetrics(input: DashboardMetricsInput): DashboardMe
       feedbackAnswers: input.feedback.answered,
       payingCustomers: null,
       mrrUsd: null,
+      recentVisitors: analyticsAvailable ? analytics.recentVisitors : [],
     },
     acquisition: {
       available: analyticsAvailable,

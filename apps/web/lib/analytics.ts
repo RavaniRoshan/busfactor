@@ -1,20 +1,11 @@
 "use client";
 
-import posthog from "posthog-js";
+import {
+  sanitizeAnalyticsProperties,
+  type ProductEvent,
+} from "./analytics-schema";
 
-export type AnalyticsEvent =
-  | "scan_page_viewed"
-  | "scan_started"
-  | "scan_succeeded"
-  | "scan_failed"
-  | "report_viewed"
-  | "report_downloaded"
-  | "fixes_downloaded"
-  | "badge_clicked"
-  | "report_shared"
-  | "feedback_submitted"
-  | "repeat_scan_completed";
-
+export type AnalyticsEvent = ProductEvent;
 export type Consent = "granted" | "denied";
 
 export interface Attribution {
@@ -27,15 +18,58 @@ export interface Attribution {
 
 const CONSENT_KEY = "busfactor.analytics.consent.v1";
 const ATTRIBUTION_KEY = "busfactor.attribution.v1";
+const CLIENT_ID_KEY = "busfactor.analytics.id.v1";
+const SESSION_ID_KEY = "busfactor.analytics.session.v1";
 const SCAN_COMPLETED_KEY = "busfactor.scan.completed";
 export const ANALYTICS_READY_EVENT = "busfactor:analytics-ready";
 
-const FORBIDDEN_KEYS = new Set(["target", "repository", "repo", "path", "url", "slug"]);
-
 let initialized = false;
+let fallbackClientId: string | null = null;
+let fallbackSessionId: string | null = null;
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";
+}
+
+function randomId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `anon-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function readId(storage: Storage, key: string, fallback: () => string): string {
+  try {
+    const existing = storage.getItem(key);
+    if (existing !== null && existing.trim() !== "") return existing;
+    const created = fallback();
+    storage.setItem(key, created);
+    return created;
+  } catch {
+    return fallback();
+  }
+}
+
+function getClientId(): string {
+  if (!isBrowser()) {
+    fallbackClientId ??= randomId();
+    return fallbackClientId;
+  }
+  return readId(window.localStorage, CLIENT_ID_KEY, () => {
+    fallbackClientId ??= randomId();
+    return fallbackClientId;
+  });
+}
+
+function getSessionId(): string {
+  if (!isBrowser()) {
+    fallbackSessionId ??= randomId();
+    return fallbackSessionId;
+  }
+  return readId(window.sessionStorage, SESSION_ID_KEY, () => {
+    fallbackSessionId ??= randomId();
+    return fallbackSessionId;
+  });
 }
 
 export function buildAttribution(search: string): Attribution {
@@ -62,23 +96,7 @@ export function bucketFileCount(count: number): "0-100" | "100-500" | "500-2000"
   return "2000+";
 }
 
-function isForbiddenValue(value: unknown): boolean {
-  if (typeof value !== "string") return false;
-  return value.includes("github.com/") || value.startsWith("file://");
-}
-
-export function sanitizeAnalyticsProperties(
-  properties: Record<string, unknown> | undefined
-): Record<string, unknown> {
-  if (!properties) return {};
-  const sanitized: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(properties)) {
-    if (FORBIDDEN_KEYS.has(key)) continue;
-    if (isForbiddenValue(value)) continue;
-    sanitized[key] = value;
-  }
-  return sanitized;
-}
+export { sanitizeAnalyticsProperties };
 
 export function getConsent(): Consent | null {
   if (!isBrowser()) return null;
@@ -122,51 +140,44 @@ function sanitizeAttribution(value: Record<string, unknown>): Attribution {
   return attribution;
 }
 
+export function isAnalyticsEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_ANALYTICS_DISABLED !== "1";
+}
+
 export function hasAnalyticsKey(): boolean {
-  return typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === "string" && process.env.NEXT_PUBLIC_POSTHOG_KEY.trim() !== "";
+  return isAnalyticsEnabled();
 }
 
 export function initAnalytics(): void {
   if (!isBrowser()) return;
   if (initialized) return;
-  if (!hasAnalyticsKey()) return;
+  if (!isAnalyticsEnabled()) return;
   if (getConsent() !== "granted") return;
 
-  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY as string;
-  const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || "https://us.i.posthog.com";
-  const attribution = getAttribution();
-
-  try {
-    posthog.init(key, {
-      api_host: apiHost,
-      autocapture: false,
-      capture_pageview: false,
-      disable_session_recording: true,
-      person_profiles: "identified_only",
-      persistence: "localStorage",
-    });
-
-    posthog.register({
-      surface: "product",
-      source: attribution.source,
-      medium: attribution.medium,
-      campaign: attribution.campaign,
-      content: attribution.content,
-      term: attribution.term,
-    });
-
-    initialized = true;
-    window.dispatchEvent(new Event(ANALYTICS_READY_EVENT));
-  } catch {
-    initialized = false;
-  }
+  initialized = true;
+  window.dispatchEvent(new Event(ANALYTICS_READY_EVENT));
 }
 
 export function capture(event: AnalyticsEvent, properties?: Record<string, unknown>): boolean {
-  if (!isBrowser()) return false;
-  if (!initialized) return false;
+  if (!isBrowser() || !initialized) return false;
   try {
-    posthog.capture(event, sanitizeAnalyticsProperties(properties));
+    const payload = {
+      event,
+      surface: "product" as const,
+      distinct_id: getClientId(),
+      session_id: getSessionId(),
+      properties: {
+        ...getAttribution(),
+        page: window.location.pathname,
+        ...sanitizeAnalyticsProperties(properties),
+      },
+    };
+    void fetch("/api/events", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => undefined);
     return true;
   } catch {
     return false;
@@ -175,6 +186,8 @@ export function capture(event: AnalyticsEvent, properties?: Record<string, unkno
 
 export function __resetAnalyticsForTests(): void {
   initialized = false;
+  fallbackClientId = null;
+  fallbackSessionId = null;
 }
 
 export function markScanCompleted(): void {

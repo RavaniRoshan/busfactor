@@ -53,10 +53,12 @@ export default function PrivacyPage() {
               remains in the rate-limit store.
             </li>
             <li>
-              <strong className="font-medium text-text-primary">Analytics:</strong> consent-gated PostHog events with
-              page path, device type, campaign attribution, and action names; never repository contents, URLs, local
-              paths, slugs, or secrets. Declining analytics initializes no PostHog tracking and sends no events.
-              Retention follows the PostHog project settings; requests can be sent to the contact address.
+              <strong className="font-medium text-text-primary">Analytics:</strong> consent-gated first-party events
+              stored in Neon (<code className="font-mono">analytics_events</code>) with event name, anonymous visitor
+              ID, session ID, page path, device type, campaign attribution, and allowlisted action metadata. Repository
+              contents, repository URLs, local paths, slugs, emails, and secrets are never sent. Declining analytics
+              initializes no tracking and sends no events. Events are retained until a removal request; the operator
+              can delete all events for a visitor ID through the authenticated admin endpoint.
             </li>
             <li>
               <strong className="font-medium text-text-primary">Admin sessions:</strong> HttpOnly cookie, 8 hours.
@@ -72,8 +74,8 @@ export default function PrivacyPage() {
           <h2 className="text-label font-medium text-text-primary">Recipients</h2>
           <p className="mt-sm text-label-sm text-text-secondary">
             Hosting is provided by Vercel, persistence by Neon Postgres, and, when enabled, language inference by Groq.
-            Product analytics, when consented, is provided by PostHog. BusFactor does not sell data or share reports
-            with third parties.
+            Analytics events are stored in BusFactor&apos;s own Neon database; no third-party analytics processor is
+            used. BusFactor does not sell data or share reports with third parties.
           </p>
         </section>
 

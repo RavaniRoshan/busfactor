@@ -15,8 +15,8 @@ export default function RemovalPage() {
             {CONTACT}
           </a>{" "}
           with the report URL, the email address used for the waitlist, or enough detail to identify the record. We
-          handle removal requests for reports, waitlist entries, feedback records, and analytics deletion requests.
-          Requests are handled manually by the operator; we aim to handle removal requests within 24 hours and will
+          handle removal requests for reports, waitlist entries, feedback records, and analytics events by anonymous
+          visitor ID. Requests are handled manually by the operator; we aim to handle removal requests within 24 hours and will
           confirm when the requested record is gone. Do not assume automated public deletion beyond the operator
           endpoint.
         </p>

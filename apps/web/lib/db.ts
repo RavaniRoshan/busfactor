@@ -103,6 +103,25 @@ export async function ensureSchema(): Promise<void> {
           usd numeric(12,6) NOT NULL DEFAULT 0
         );`
       );
+      await p.query(
+        `CREATE TABLE IF NOT EXISTS analytics_events (
+          id bigserial PRIMARY KEY,
+          occurred_at timestamptz NOT NULL DEFAULT now(),
+          event text NOT NULL,
+          surface text NOT NULL CHECK (surface IN ('product','marketing')),
+          distinct_id text NOT NULL,
+          session_id text,
+          properties jsonb NOT NULL DEFAULT '{}'::jsonb
+        );
+        CREATE INDEX IF NOT EXISTS analytics_events_occurred_at_idx
+          ON analytics_events (occurred_at DESC);
+        CREATE INDEX IF NOT EXISTS analytics_events_event_idx
+          ON analytics_events (event, occurred_at DESC);
+        CREATE INDEX IF NOT EXISTS analytics_events_surface_idx
+          ON analytics_events (surface, occurred_at DESC);
+        CREATE INDEX IF NOT EXISTS analytics_events_distinct_id_idx
+          ON analytics_events (distinct_id);`
+      );
     })();
   }
   return ready;

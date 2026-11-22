@@ -24,8 +24,8 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {children}
       {enabled && consent === null ? <ConsentBanner onChoose={choose} /> : null}
+      {children}
     </>
   );
 }
@@ -34,12 +34,12 @@ function ConsentBanner({ onChoose }: { onChoose: (value: Consent) => void }) {
   return (
     <aside
       aria-label="Analytics consent"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border-secondary bg-surface-bg/95 px-lg py-lg backdrop-blur"
+      className="w-full border-b border-border-secondary bg-surface-bg px-lg py-md"
     >
-      <div className="mx-auto flex max-w-page flex-col gap-md md:flex-row md:items-center md:justify-between">
-        <p className="max-w-3xl text-label-sm text-text-secondary">
-          BusFactor uses privacy-friendly analytics (PostHog) to understand which pages and actions are useful. No
-          repository contents, URLs, or paths are sent.
+      <div className="mx-auto flex w-full max-w-page flex-col gap-md md:flex-row md:items-center md:justify-between">
+        <p className="min-w-0 flex-1 text-label-sm text-text-secondary md:max-w-article">
+          BusFactor stores privacy-friendly analytics events in its own database to understand which pages and
+          actions are useful. No repository contents, URLs, or paths are sent.
         </p>
         <div className="flex shrink-0 gap-sm">
           <button

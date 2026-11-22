@@ -32,7 +32,7 @@ export default function TermsPage() {
           <h2 className="text-label font-medium text-text-primary">Data processing</h2>
           <p className="mt-sm text-label-sm text-text-secondary">
             BusFactor uses Vercel for hosting, Neon for persistence, Groq for language inference when a key is
-            configured, and PostHog for consent-gated product analytics when a key is configured. See the Privacy page
+            configured, and Neon for consent-gated first-party analytics. See the Privacy page
             for the data inventory and removal process.
           </p>
         </section>

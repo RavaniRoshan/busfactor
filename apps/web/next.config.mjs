@@ -7,8 +7,7 @@ const contentSecurityPolicy = [
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
-  // Allow PostHog product analytics ingestion when consent is granted.
-  "connect-src 'self' https://*.posthog.com",
+  "connect-src 'self'",
   isDev ? "" : "upgrade-insecure-requests",
 ]
   .filter(Boolean)

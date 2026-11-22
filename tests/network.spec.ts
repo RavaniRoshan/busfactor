@@ -11,6 +11,16 @@ test("no analytics or tracker request happens before consent", async ({ page }) 
   expect(trackers, `Automatic tracker requests: ${trackers.join("\n")}`).toEqual([]);
 });
 
+test("accepting consent sends a first-party analytics event", async ({ page }) => {
+  await page.goto("/scan");
+  const responsePromise = page.waitForResponse(
+    (response) => response.url().endsWith("/api/events") && response.request().method() === "POST"
+  );
+  await page.getByRole("button", { name: "Accept" }).click();
+  const response = await responsePromise;
+  expect(response.status()).toBe(204);
+});
+
 test("no non-essential cookies or storage keys are set before consent", async ({ page, context }) => {
   await page.goto("/scan");
   await page.waitForLoadState("networkidle");

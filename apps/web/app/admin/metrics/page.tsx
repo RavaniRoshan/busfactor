@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { hasDatabase, getPool } from "@/lib/db";
 import { buildDashboardMetrics, dashboardRange, type DashboardMetrics } from "@/lib/metrics";
-import { getAnalyticsSummary } from "@/lib/posthog";
+import { getAnalyticsSummary } from "@/lib/analytics-events";
 import { records } from "@/lib/records";
 import { scanJobs } from "@/lib/scan-jobs";
 import { spendStore, utcDay } from "@/lib/spend";
@@ -114,20 +114,12 @@ function RangeSelector({ current }: { current: 7 | 30 | 90 }) {
   );
 }
 
-function AcquisitionSection({
-  metrics,
-  projectId,
-  posthogHost,
-}: {
-  metrics: DashboardMetrics;
-  projectId: string | undefined;
-  posthogHost: string;
-}) {
+function AcquisitionSection({ metrics }: { metrics: DashboardMetrics }) {
   const a = metrics.acquisition;
   return (
     <Section id="acquisition" title="B. Acquisition">
       {!a.available ? (
-        <p className="text-label-sm text-text-secondary">PostHog not configured.</p>
+        <p className="text-label-sm text-text-secondary">Analytics events are unavailable.</p>
       ) : (
         <>
           <div className="grid gap-xl sm:grid-cols-2 lg:grid-cols-3">
@@ -209,18 +201,9 @@ function AcquisitionSection({
               )}
             </div>
           </div>
-          {projectId ? (
-            <p className="mt-lg text-label-sm text-text-secondary">
-              <a
-                href={`${posthogHost}/project/${projectId}`}
-                className="underline underline-offset-4 hover:text-text-primary"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open PostHog project
-              </a>
-            </p>
-          ) : null}
+          <p className="mt-lg text-label-sm text-text-secondary">
+            First-party events stored in Neon. Consent-gated; visitors who declined are not represented.
+          </p>
         </>
       )}
     </Section>
@@ -270,9 +253,6 @@ export default async function AdminMetricsPage({
     spendCapUsd: spendCapUsd(),
   });
 
-  const projectId = process.env.POSTHOG_PROJECT_ID?.trim();
-  const posthogHost = (process.env.POSTHOG_API_HOST?.trim() || "https://us.posthog.com").replace(/\/+$/, "");
-
   return (
     <main className="min-h-screen bg-brand-tertiary px-xl py-4xl text-text-primary md:px-2xl">
       <div className="mx-auto w-full max-w-page">
@@ -305,9 +285,45 @@ export default async function AdminMetricsPage({
               <Kpi label="Paying customers" value="Not enabled" note="Billing is not enabled in this build." />
               <Kpi label="MRR" value="Not enabled" note="Billing is not enabled in this build." />
             </div>
+
+            <div className="mt-xl">
+              <h3 className="text-label-sm font-medium text-text-primary">Recent anonymous visitors</h3>
+              {metrics.business.recentVisitors.length === 0 ? (
+                <p className="mt-sm text-label-sm text-text-secondary">No data yet.</p>
+              ) : (
+                <div className="mt-sm overflow-x-auto">
+                  <table className="w-full text-left text-label-sm">
+                    <thead>
+                      <tr className="border-b border-border-secondary text-text-secondary">
+                        <th className="py-sm pr-lg">Visitor</th>
+                        <th className="py-sm pr-lg">First seen</th>
+                        <th className="py-sm pr-lg">Last seen</th>
+                        <th className="py-sm pr-lg">Events</th>
+                        <th className="py-sm">Scans</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {metrics.business.recentVisitors.map((visitor) => (
+                        <tr key={visitor.distinctId} className="border-b border-border-secondary last:border-0">
+                          <td className="py-sm pr-lg font-mono text-xs">{visitor.distinctId.slice(0, 8)}</td>
+                          <td className="py-sm pr-lg font-mono text-xs">{visitor.firstSeen.slice(0, 16).replace("T", " ")}</td>
+                          <td className="py-sm pr-lg font-mono text-xs">{visitor.lastSeen.slice(0, 16).replace("T", " ")}</td>
+                          <td className="py-sm pr-lg font-mono tabular-nums">{visitor.events}</td>
+                          <td className="py-sm font-mono tabular-nums">{visitor.scans}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <p className="mt-sm text-label-sm text-text-secondary">
+                Anonymous IDs until accounts are introduced. Analytics events are stored in Neon and can be deleted by
+                visitor ID through the admin deletion endpoint.
+              </p>
+            </div>
           </Section>
 
-          <AcquisitionSection metrics={metrics} projectId={projectId} posthogHost={posthogHost} />
+          <AcquisitionSection metrics={metrics} />
 
           <Section id="activation-engagement" title="C. Activation and engagement">
             <div className="grid gap-xl sm:grid-cols-2 lg:grid-cols-4">

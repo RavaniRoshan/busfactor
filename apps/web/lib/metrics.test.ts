@@ -38,6 +38,7 @@ function analytics(overrides: Partial<AnalyticsSummary> = {}): AnalyticsSummary 
     breakdownsAvailable: true,
     campaigns: [{ campaign: "launch", visitors: 30 }],
     sources: [{ source: "google", visitors: 20 }],
+    recentVisitors: [],
     ...overrides,
   };
 }
