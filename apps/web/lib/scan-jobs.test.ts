@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { computeJobMetrics, scanJobs } from "./scan-jobs";
+import { SnapshotError } from "../../../packages/core/src/snapshot.js";
+import { categorizeScanError, computeJobMetrics, scanJobs } from "./scan-jobs";
 
 const base = {
   createdAt: "2026-11-22T00:00:00.000Z",
@@ -66,5 +67,13 @@ describe("scan jobs", () => {
     const metrics = computeJobMetrics(jobs);
     expect(metrics.medianDurationMs).toBe(2500);
     expect(metrics.p95DurationMs).toBe(4000);
+  });
+
+  it("categorizes GitHub fetch failures by intent", () => {
+    expect(categorizeScanError(new SnapshotError("github_commit_lookup_failed", "x"))).toBe("repo_not_found");
+    expect(categorizeScanError(new SnapshotError("github_tarball_not_found", "x"))).toBe("repo_not_found");
+    expect(categorizeScanError(new SnapshotError("github_rate_limited", "x"))).toBe("provider_rate_limited");
+    expect(categorizeScanError(new SnapshotError("github_unavailable", "x"))).toBe("provider_error");
+    expect(categorizeScanError(Object.assign(new TypeError("fetch failed"), { code: "ECONNRESET" }))).toBe("provider_error");
   });
 });

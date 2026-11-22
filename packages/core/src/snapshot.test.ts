@@ -124,6 +124,23 @@ describe("snapshot ingestion", () => {
     await snapshot.dispose?.();
   });
 
+  it("classifies GitHub fetch failures by intent", async () => {
+    const network = vi.fn(async () => { throw new TypeError("fetch failed"); });
+    await expect(resolveGitHubRepo("https://github.com/owner/repo", { fetchImpl: network as any })).rejects.toMatchObject({ code: "github_unavailable" });
+
+    const abort = vi.fn(async () => { throw Object.assign(new Error("aborted"), { name: "AbortError" }); });
+    await expect(resolveGitHubRepo("https://github.com/owner/repo", { fetchImpl: abort as any })).rejects.toMatchObject({ code: "github_unavailable" });
+
+    const http500 = vi.fn(async () => new Response("nope", { status: 500 }));
+    await expect(resolveGitHubRepo("https://github.com/owner/repo", { fetchImpl: http500 as any })).rejects.toMatchObject({ code: "github_unavailable" });
+
+    const http404 = vi.fn(async () => new Response("nope", { status: 404 }));
+    await expect(resolveGitHubRepo("https://github.com/owner/repo", { fetchImpl: http404 as any })).rejects.toMatchObject({ code: "github_commit_lookup_failed" });
+
+    const http429 = vi.fn(async () => new Response("nope", { status: 429 }));
+    await expect(resolveGitHubRepo("https://github.com/owner/repo", { fetchImpl: http429 as any })).rejects.toMatchObject({ code: "github_rate_limited" });
+  });
+
   it("uses redirect:error, timeout, and optional auth for GitHub fetches", async () => {
     const sha = "0123456789abcdef0123456789abcdef01234567";
     const githubParent = makeTempDir("busfactor-github-parent-");
@@ -168,6 +185,8 @@ describe("snapshot ingestion", () => {
     const tarballInit = tarballCall?.[1] as RequestInit | undefined;
     expect(tarballInit?.redirect).toBe("error");
     expect(tarballInit?.signal).toBeDefined();
+    const tarballHeaders = new Headers(tarballInit?.headers);
+    expect(tarballHeaders.get("authorization")).toBe("Bearer test-token");
     await snapshot.dispose?.();
   });
 });

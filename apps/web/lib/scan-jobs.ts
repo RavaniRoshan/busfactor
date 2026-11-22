@@ -131,16 +131,17 @@ export function categorizeScanError(error: unknown): string {
   ) {
     return "invalid_input";
   }
-  if (code === "not_a_directory" || code === "github_commit_lookup_failed") {
+  if (code === "not_a_directory" || code === "github_commit_lookup_failed" || code === "github_tarball_not_found") {
     return "repo_not_found";
   }
-  if (code === "file_cap_exceeded" || code === "size_cap_exceeded" || code === "github_tarball_failed") {
+  if (code === "file_cap_exceeded" || code === "size_cap_exceeded") {
     return "repo_too_large";
   }
-  if (message.includes("429") || message.includes("rate limit")) {
+  if (code === "github_rate_limited" || message.includes("429") || message.includes("rate limit")) {
     return "provider_rate_limited";
   }
   if (
+    code === "github_unavailable" ||
     code === "provider_error" ||
     message.includes("provider") ||
     message.includes("openrouter") ||

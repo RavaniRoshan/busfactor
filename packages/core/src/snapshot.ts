@@ -321,6 +321,34 @@ function githubFetchOptions(options: SnapshotOptions, token?: string): RequestIn
   };
 }
 
+function githubStatusError(status: number, notFoundCode: string): SnapshotError {
+  if (status === 404) {
+    return new SnapshotError(notFoundCode, "Repository not found");
+  }
+  if (status === 429) {
+    return new SnapshotError("github_rate_limited", "GitHub rate limit exceeded");
+  }
+  if (status >= 500) {
+    return new SnapshotError("github_unavailable", "GitHub is temporarily unavailable");
+  }
+  return new SnapshotError("github_unavailable", "Could not fetch repository data from GitHub");
+}
+
+function githubFetchError(error: unknown): SnapshotError {
+  if (error instanceof SnapshotError) return error;
+  if (error instanceof Error && error.name === "AbortError") {
+    return new SnapshotError("github_unavailable", "GitHub request timed out");
+  }
+  if (error instanceof TypeError) {
+    return new SnapshotError("github_unavailable", "Could not reach GitHub");
+  }
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  if (message.includes("timeout") || message.includes("abort")) {
+    return new SnapshotError("github_unavailable", "GitHub request timed out");
+  }
+  return new SnapshotError("github_unavailable", "Could not reach GitHub");
+}
+
 export async function resolveGitHubRepo(
   input: string,
   options: SnapshotOptions = {},
@@ -335,11 +363,11 @@ export async function resolveGitHubRepo(
   let commitResponse: Response;
   try {
     commitResponse = await fetchImpl(commitUrl, githubFetchOptions(options, token));
-  } catch {
-    throw new SnapshotError("github_commit_lookup_failed", "Could not resolve repository commit");
+  } catch (error) {
+    throw githubFetchError(error);
   }
   if (!commitResponse.ok) {
-    throw new SnapshotError("github_commit_lookup_failed", "Could not resolve repository commit");
+    throw githubStatusError(commitResponse.status, "github_commit_lookup_failed");
   }
   const commitJson = (await commitResponse.json()) as { sha?: string } | Array<{ sha?: string }>;
   const sha = Array.isArray(commitJson) ? commitJson[0]?.sha : commitJson.sha;
@@ -376,11 +404,11 @@ export async function createSnapshotFromGitHub(
       `https://codeload.github.com/${parsed.owner}/${parsed.repo}/tar.gz/${sha}`,
       githubFetchOptions(options, token),
     );
-  } catch {
-    throw new SnapshotError("github_tarball_failed", "Could not download repository archive");
+  } catch (error) {
+    throw githubFetchError(error);
   }
   if (!tarballResponse.ok) {
-    throw new SnapshotError("github_tarball_failed", "Could not download repository archive");
+    throw githubStatusError(tarballResponse.status, "github_tarball_not_found");
   }
 
   const contentLength = tarballResponse.headers.get("content-length");
