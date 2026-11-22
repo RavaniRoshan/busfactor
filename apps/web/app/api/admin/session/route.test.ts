@@ -82,10 +82,22 @@ describe("DELETE /api/admin/session", () => {
   it("clears the admin cookie", async () => {
     process.env.BUSFACTOR_ADMIN_TOKEN = "audit-test-token";
     process.env.BUSFACTOR_ADMIN_SESSION_SECRET = "test-secret";
-    const response = await DELETE();
+    const response = await DELETE(
+      new Request("http://localhost/api/admin/session", { method: "DELETE" })
+    );
     expect(response.status).toBe(200);
     const setCookie = response.headers.get("set-cookie") ?? "";
     expect(setCookie).toContain(`${ADMIN_COOKIE}=`);
     expect(setCookie.toLowerCase()).toMatch(/max-age=0|expires=/);
+  });
+
+  it("rejects a cross-origin DELETE", async () => {
+    const response = await DELETE(
+      new Request("http://localhost/api/admin/session", {
+        method: "DELETE",
+        headers: { origin: "https://evil.example" },
+      })
+    );
+    expect(response.status).toBe(403);
   });
 });

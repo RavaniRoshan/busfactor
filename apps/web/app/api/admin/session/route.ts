@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { ADMIN_COOKIE, adminCookieOptions, signSession } from "@/lib/admin-auth";
+import { ADMIN_COOKIE, adminCookieOptions, assertSameOrigin, signSession } from "@/lib/admin-auth";
 import { hashIp } from "@/lib/ip";
 import { store } from "@/lib/store";
 
@@ -23,16 +23,8 @@ function safeTokenEquals(provided: string, expected: string): boolean {
 }
 
 export async function POST(request: Request) {
-  const origin = request.headers.get("origin");
-  if (origin) {
-    try {
-      if (origin !== new URL(request.url).origin) {
-        return NextResponse.json({ error: "forbidden" }, { status: 403 });
-      }
-    } catch {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
-    }
-  }
+  const originError = assertSameOrigin(request);
+  if (originError) return originError;
 
   const allowed = await store.rateLimits.consume(
     `admin-login:${hashIp(clientIp(request))}`,
@@ -56,7 +48,10 @@ export async function POST(request: Request) {
   return response;
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  const originError = assertSameOrigin(request);
+  if (originError) return originError;
+
   const response = NextResponse.json({ ok: true });
   response.cookies.set(ADMIN_COOKIE, "", { ...adminCookieOptions(), maxAge: 0 });
   return response;

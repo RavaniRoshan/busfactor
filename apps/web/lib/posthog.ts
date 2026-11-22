@@ -119,13 +119,13 @@ export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummar
   const summaryQuery = `
 SELECT
   uniq(distinct_id) AS visitors,
-  uniqIf(distinct_id, event = 'landing_viewed') AS landing_visitors,
-  countIf(event = 'scanner_cta_clicked') AS scanner_cta_clicks,
-  countIf(event = 'scan_page_viewed') AS scan_page_views,
-  countIf(event = 'report_viewed') AS report_views,
-  countIf(event = 'report_downloaded') AS report_downloads,
-  countIf(event = 'report_shared') AS reports_shared,
-  countIf(event = 'feedback_submitted') AS feedback_submitted
+  uniqIf(distinct_id, event = 'landing_viewed' AND properties.surface = 'marketing') AS landing_visitors,
+  countIf(event = 'scanner_cta_clicked' AND properties.surface = 'marketing') AS scanner_cta_clicks,
+  countIf(event = 'scan_page_viewed' AND properties.surface = 'product') AS scan_page_views,
+  countIf(event = 'report_viewed' AND properties.surface = 'product') AS report_views,
+  countIf(event = 'report_downloaded' AND properties.surface = 'product') AS report_downloads,
+  countIf(event = 'report_shared' AND properties.surface = 'product') AS reports_shared,
+  countIf(event = 'feedback_submitted' AND properties.surface = 'product') AS feedback_submitted
 FROM events
 WHERE timestamp >= now() - INTERVAL ${normalizedDays} DAY
 `.trim();
@@ -133,7 +133,9 @@ WHERE timestamp >= now() - INTERVAL ${normalizedDays} DAY
   const campaignQuery = `
 SELECT properties.campaign AS campaign, uniq(distinct_id) AS visitors
 FROM events
-WHERE event = 'landing_viewed' AND properties.campaign IS NOT NULL
+WHERE event = 'landing_viewed'
+  AND properties.surface = 'marketing'
+  AND properties.campaign IS NOT NULL
 GROUP BY campaign
 ORDER BY visitors DESC
 LIMIT 10
@@ -142,7 +144,9 @@ LIMIT 10
   const sourceQuery = `
 SELECT properties.source AS source, uniq(distinct_id) AS visitors
 FROM events
-WHERE event = 'landing_viewed' AND properties.source IS NOT NULL
+WHERE event = 'landing_viewed'
+  AND properties.surface = 'marketing'
+  AND properties.source IS NOT NULL
 GROUP BY source
 ORDER BY visitors DESC
 LIMIT 10
@@ -153,13 +157,16 @@ SELECT count(DISTINCT s.distinct_id) AS qualified_scans_7d
 FROM (
   SELECT distinct_id, min(timestamp) AS scan_ts
   FROM events
-  WHERE event = 'scan_succeeded' AND timestamp >= now() - INTERVAL ${normalizedDays} DAY
+  WHERE event = 'scan_succeeded'
+    AND properties.surface = 'product'
+    AND timestamp >= now() - INTERVAL ${normalizedDays} DAY
   GROUP BY distinct_id
 ) s
 JOIN (
   SELECT distinct_id, timestamp
   FROM events
   WHERE event IN ('report_downloaded', 'report_shared', 'feedback_submitted')
+    AND properties.surface = 'product'
     AND timestamp >= now() - INTERVAL ${normalizedDays} DAY
 ) a ON s.distinct_id = a.distinct_id
 WHERE a.timestamp >= s.scan_ts AND a.timestamp <= s.scan_ts + INTERVAL 7 DAY

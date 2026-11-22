@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 export const ADMIN_COOKIE = "bf_admin";
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
@@ -100,6 +101,21 @@ export function adminCookieOptions(): {
     path: "/",
     maxAge: Math.floor(SESSION_TTL_MS / 1000),
   };
+}
+
+export function isSameOrigin(request: Request): boolean {
+  const origin = request.headers.get("origin");
+  if (!origin) return true;
+  try {
+    return origin === new URL(request.url).origin;
+  } catch {
+    return false;
+  }
+}
+
+export function assertSameOrigin(request: Request): NextResponse | null {
+  if (isSameOrigin(request)) return null;
+  return NextResponse.json({ error: "forbidden" }, { status: 403 });
 }
 
 export async function isAdminRequest(): Promise<boolean> {

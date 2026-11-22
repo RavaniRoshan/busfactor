@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
-import { isAdminRequest } from "@/lib/admin-auth";
+import { assertSameOrigin, isAdminRequest } from "@/lib/admin-auth";
 import { records } from "@/lib/records";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function DELETE(request: Request) {
+  const originError = assertSameOrigin(request);
+  if (originError) return originError;
+
   if (!(await isAdminRequest())) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }

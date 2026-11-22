@@ -95,7 +95,7 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        <p className="text-label-sm text-text-tertiary">Last updated: 20 November 2026.</p>
+        <p className="text-label-sm text-text-tertiary">Last updated: 22 November 2026.</p>
       </div>
     </PageFrame>
   );

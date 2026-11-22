@@ -114,6 +114,70 @@ describe("posthog analytics", () => {
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer phx_test");
   });
 
+  it("scopes HogQL queries by analytics surface", async () => {
+    process.env.POSTHOG_PERSONAL_API_KEY = "phx_test";
+    process.env.POSTHOG_PROJECT_ID = "123";
+
+    const responses = [
+      { results: [[100, 80, 12, 40, 20, 5, 3, 2]] },
+      { results: [["launch", 50]] },
+      { results: [["google", 30]] },
+      { results: [[7]] },
+    ];
+    const fetchMock = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify(responses.shift() ?? { results: [] }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      )
+    );
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const summary = await getAnalyticsSummary(30);
+    expect(summary.available).toBe(true);
+
+    const queries = fetchMock.mock.calls.map((call) => {
+      const init = call[1] as RequestInit;
+      return (JSON.parse(String(init.body)) as { query: { query: string } }).query.query;
+    });
+
+    expect(queries).toHaveLength(4);
+    const [summaryQuery, campaignQuery, sourceQuery, qualifiedQuery] = queries;
+
+    expect(summaryQuery).toContain("event = 'landing_viewed' AND properties.surface = 'marketing'");
+    expect(summaryQuery).toContain(
+      "countIf(event = 'scanner_cta_clicked' AND properties.surface = 'marketing')"
+    );
+    expect(summaryQuery).toContain(
+      "countIf(event = 'scan_page_viewed' AND properties.surface = 'product')"
+    );
+    expect(summaryQuery).toContain(
+      "countIf(event = 'report_viewed' AND properties.surface = 'product')"
+    );
+    expect(summaryQuery).toContain(
+      "countIf(event = 'report_downloaded' AND properties.surface = 'product')"
+    );
+    expect(summaryQuery).toContain(
+      "countIf(event = 'report_shared' AND properties.surface = 'product')"
+    );
+    expect(summaryQuery).toContain(
+      "countIf(event = 'feedback_submitted' AND properties.surface = 'product')"
+    );
+
+    expect(campaignQuery).toContain("event = 'landing_viewed'");
+    expect(campaignQuery).toContain("properties.surface = 'marketing'");
+    expect(sourceQuery).toContain("event = 'landing_viewed'");
+    expect(sourceQuery).toContain("properties.surface = 'marketing'");
+
+    expect(qualifiedQuery).toContain("event = 'scan_succeeded'");
+    expect(qualifiedQuery).toContain("properties.surface = 'product'");
+    expect(qualifiedQuery).toContain(
+      "event IN ('report_downloaded', 'report_shared', 'feedback_submitted')"
+    );
+    expect(qualifiedQuery.match(/properties\.surface = 'product'/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+  });
+
   it("marks breakdowns unavailable when campaign/source queries fail but summary succeeds", async () => {
     process.env.POSTHOG_PERSONAL_API_KEY = "phx_test";
     process.env.POSTHOG_PROJECT_ID = "123";
