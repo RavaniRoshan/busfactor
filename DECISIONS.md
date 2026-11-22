@@ -137,3 +137,12 @@
   - Local security scenarios (actual): local path `fixtures/repos/clean` -> 400 `invalid_input`; `http://169.254.169.254/latest/meta-data` -> 400 `invalid_input`; `https://github.com.evil.com/a/b` -> 400 `invalid_input`; `GET /admin/metrics?token=test-admin-token` without cookie -> 307 `Location: /admin/login`; feedback missing slug -> 404 `{"error":"report not found"}`; kill switch server (`BUSFACTOR_KILL_SWITCH=1`) POST `/api/scan` public repo -> 503 `{"error":"scans are temporarily disabled","category":"unavailable"}`.
   - Analytics live verification: BLOCKED: PostHog keys not supplied.
 - Alternatives rejected: Changing the dashboard heading back to "BusFactor operations" (would regress Task 7 naming); fabricating PostHog live-event evidence; running deployment/publish commands.
+
+## 2026-11-22 — Final whole-branch review fix wave
+
+- Decision: Address the two Important final-review findings: add same-origin checks to admin mutation routes and scope PostHog HogQL metrics by `properties.surface`. Keep all deferred minors as tracked follow-ups.
+- Branch taken: Added shared `isSameOrigin`/`assertSameOrigin` in `apps/web/lib/admin-auth.ts` and applied it to admin session POST/DELETE and both admin record-deletion routes. Scoped marketing summary/breakdown queries to `surface = 'marketing'` and product/qualified-scan queries to `surface = 'product'`. Aligned the privacy "Last updated" date with terms/removal.
+- Why: The final review flagged destructive admin routes without the origin defense already used at login, and mixed product/marketing metrics in a shared PostHog project.
+- Evidence: Commit `fee428d`; focused tests 28/28; `pnpm gate` PASS (core 48 tests, web 99 tests); `pnpm verify` PASS (Playwright 21/21); scoped re-review clean.
+- Alternatives rejected: A second fix wave (not needed); hardcoding a single PostHog surface filter across the mixed summary query (would hide one surface's metrics).
+- Residual: The unscoped total `visitors` count is intentionally a cross-surface total; all per-metric counts and funnels are surface-scoped. PostHog live verification remains blocked on keys.

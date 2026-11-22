@@ -1,5 +1,5 @@
 phase: MVP
-last_prompt: Task 11 (Full Verification, Documentation, and Handoff) @ 0bfadaa
+last_prompt: Final whole-branch review fix wave @ fee428d
 status: PARTIAL
 gates:
   p0_bootstrap: pass
@@ -15,7 +15,8 @@ gates:
   operator_dashboard: pass (real store data, 60 tests, token-gated; production token not set)
   deterministic_verify: pass (pnpm verify 21/21 passed after stale admin-metrics heading assertion fix)
   task11_main_install: pass (pnpm install --frozen-lockfile; lockfile up to date; pnpm v10.15.0)
-  task11_main_gate: pass (pnpm gate: typecheck PASS, lint PASS, test PASS; core 14 files/48 tests, web 19 files/91 tests)
+  task11_main_gate: pass (pnpm gate: typecheck PASS, lint PASS, test PASS; core 14 files/48 tests, web 19 files/99 tests after final-review fixes)
+  final_review: pass (2 Important fixes: admin DELETE origin checks, PostHog surface scoping; scoped re-review clean; no Critical issues)
   task11_main_verify_build: pass (pnpm verify:build: core build PASS, web Next build PASS, 16/16 static pages)
   task11_main_verify: pass (pnpm verify: 21 passed, 0 failed; stale admin-metrics heading assertion updated to "BusFactor KPI dashboard")
   task11_marketing_install: pass (npm ci --legacy-peer-deps; 290 packages; 2 high severity audit warnings reported)
@@ -38,7 +39,7 @@ measured:
   gold_agreement: null
   seed_repos_scanned: 0
   task11_main_install: PASS (pnpm install --frozen-lockfile, 1.1s)
-  task11_main_gate: PASS (pnpm gate; typecheck PASS; lint PASS; test PASS — packages/core 14 files/48 tests, apps/web 19 files/91 tests)
+  task11_main_gate: PASS (pnpm gate; typecheck PASS; lint PASS; test PASS — packages/core 14 files/48 tests, apps/web 19 files/99 tests after final-review fixes)
   task11_main_verify_build: PASS (pnpm verify:build; Next compiled successfully; 16/16 static pages)
   task11_main_verify: PASS (pnpm verify rerun after fix; Playwright 21 passed / 0 failed / 21 total, 10.9s). Fixed stale assertion in tests/functional.spec.ts:68 from "BusFactor operations" to "BusFactor KPI dashboard" to match Task 7 dashboard rename.
   task11_marketing_install: PASS (npm ci --legacy-peer-deps; 290 packages; 2 high severity npm audit warnings, no remediation)
@@ -54,6 +55,7 @@ measured:
   task11_security_feedback_missing_slug: PASS (POST /api/feedback {"slug":"nonexistent-slug-does-not-exist","helpful":true} -> 404 {"error":"report not found"})
   task11_security_kill_switch: PASS (separate local server with BUSFACTOR_KILL_SWITCH=1; POST /api/scan {"target":"https://github.com/owner/repo"} -> 503 {"error":"scans are temporarily disabled","category":"unavailable"})
   task11_analytics_live: BLOCKED: PostHog keys not supplied
+  final_review_fix: PASS (admin DELETE origin guard + PostHog surface filters; focused tests 28/28, pnpm gate 48+99, pnpm verify 21/21; scoped re-review clean)
 open_blockers:
   - "BUSFACTOR_ADMIN_TOKEN not set on Vercel — /admin/metrics shows Unauthorized (human-owned)"
   - "BUSFACTOR_ADMIN_SESSION_SECRET not set/configured on Vercel (human-owned; recommended)"
