@@ -94,12 +94,11 @@ function isFreshCacheEntry(entry: { createdAt?: number } | undefined): boolean {
 }
 
 export async function POST(request: Request) {
-  // 1. Kill switch
+  // 1. Kill switch, body validation, rate limit.
   if (process.env.BUSFACTOR_KILL_SWITCH === "1") {
     return Response.json({ error: "scans are temporarily disabled", category: "unavailable" }, { status: 503 });
   }
 
-  // 2. Parse body and validate target
   const body = (await request.json().catch(() => ({}))) as { target?: unknown };
   const rawTarget = typeof body.target === "string" ? body.target.trim() : "";
   if (rawTarget === "") {
@@ -115,7 +114,6 @@ export async function POST(request: Request) {
     return Response.json({ error: safeErrorMessage(category), category }, { status: 400 });
   }
 
-  // 3. Rate limit
   const allowed = await store.rateLimits.consume(hashIp(clientIp(request)), utcDay(), 10);
   if (!allowed) {
     return Response.json({ error: "rate limit exceeded", category: "rate_limited" }, { status: 429 });
@@ -124,11 +122,10 @@ export async function POST(request: Request) {
   const core = await loadCore();
   const { ENGINE_VERSION, RUBRIC_VERSION, PROMPT_VERSION } = core;
 
-  // 4. Resolve SHA / local snapshot
+  // 2. Resolve the GitHub target/SHA (or the local test fixture).
   let resolvedSha = "";
   let cacheKey: string | null = null;
   let localSnapshot: Awaited<ReturnType<CoreModule["createSnapshotFromLocal"]>> | undefined;
-  let localTargetPath = "";
   try {
     if (validatedTarget.kind === "github") {
       const resolved = await core.resolveGitHubRepo(validatedTarget.url);
@@ -143,7 +140,12 @@ export async function POST(request: Request) {
       });
     } else {
       const nodePath = await import("node:path");
-      localTargetPath = nodePath.resolve(/*turbopackIgnore: true*/ process.cwd(), "..", "..", validatedTarget.path);
+      const localTargetPath = nodePath.resolve(
+        /*turbopackIgnore: true*/ process.cwd(),
+        "..",
+        "..",
+        validatedTarget.path
+      );
       localSnapshot = await core.createSnapshotFromLocal(localTargetPath);
       resolvedSha = localSnapshot.sha;
       cacheKey = null; // local test targets skip cache
@@ -151,11 +153,83 @@ export async function POST(request: Request) {
   } catch (error) {
     await Promise.resolve(localSnapshot?.dispose?.()).catch(() => undefined);
     const category = categorizeScanError(error);
-    const status = category === "invalid_input" || category === "repo_not_found" || category === "repo_too_large" ? 400 : 500;
+    const status =
+      category === "invalid_input" || category === "repo_not_found" || category === "repo_too_large" ? 400 : 500;
     return Response.json({ error: safeErrorMessage(category), category }, { status });
   }
 
-  // 6. Create running job
+  // 3. Build the SHA-pinned cache key and read the cache.
+  let cached: { report: unknown; slug: string; createdAt?: number } | undefined;
+  if (cacheKey) {
+    try {
+      cached = await store.reportCache.get(cacheKey);
+    } catch (error) {
+      await Promise.resolve(localSnapshot?.dispose?.()).catch(() => undefined);
+      const category = categorizeScanError(error);
+      return Response.json({ error: safeErrorMessage(category), category }, { status: 500 });
+    }
+  }
+
+  // 4. On a compatible cache hit: create a completed job with cacheHit true and return.
+  if (cacheKey && cached) {
+    const cachedMeta = reportMeta(cached.report);
+    const isCompatibleCache =
+      isFreshCacheEntry(cached) &&
+      cachedMeta.promptVersion === PROMPT_VERSION &&
+      cachedMeta.rubricVersion === RUBRIC_VERSION &&
+      cachedMeta.engineVersion === ENGINE_VERSION;
+    if (isCompatibleCache) {
+      await Promise.resolve(localSnapshot?.dispose?.()).catch(() => undefined);
+      const id = randomUUID();
+      try {
+        await scanJobs.create({
+          id,
+          engineVersion: ENGINE_VERSION,
+          rubricVersion: RUBRIC_VERSION,
+          promptVersion: PROMPT_VERSION,
+        });
+        await scanJobs.complete(id, {
+          reportSlug: cached.slug,
+          durationMs: 0,
+          cacheHit: true,
+          costUsd: 0,
+          model: (cachedMeta.usage?.model as string | undefined) ?? null,
+          engineVersion: ENGINE_VERSION,
+          rubricVersion: RUBRIC_VERSION,
+          promptVersion: PROMPT_VERSION,
+        });
+      } catch (error) {
+        const category = categorizeScanError(error);
+        return Response.json({ error: safeErrorMessage(category), category }, { status: 500 });
+      }
+      return Response.json({
+        id,
+        status: "complete",
+        slug: cached.slug,
+        report: cached.report,
+        ...responseFields(cached.report, { cached: true, cacheHit: true }),
+      });
+    }
+  }
+
+  // 5. On a miss: reserve daily spend. On refusal return 503 with no job creation.
+  const cap = spendCapUsd();
+  const reserveAmount = reservationUsd();
+  const day = utcDay();
+  let reservation: { ok: boolean; usd: number };
+  try {
+    reservation = await spendStore.reserve(day, reserveAmount, cap);
+  } catch (error) {
+    await Promise.resolve(localSnapshot?.dispose?.()).catch(() => undefined);
+    const category = categorizeScanError(error);
+    return Response.json({ error: safeErrorMessage(category), category }, { status: 500 });
+  }
+  if (!reservation.ok) {
+    await Promise.resolve(localSnapshot?.dispose?.()).catch(() => undefined);
+    return Response.json({ error: "daily spend cap reached", category: "spend_cap" }, { status: 503 });
+  }
+
+  // 6. After a successful reservation: create the running job and scan.
   const id = randomUUID();
   const startedAt = Date.now();
   try {
@@ -167,64 +241,12 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     await Promise.resolve(localSnapshot?.dispose?.()).catch(() => undefined);
+    await settleReservation(day, reserveAmount, 0, cap);
     const category = categorizeScanError(error);
     return Response.json({ error: safeErrorMessage(category), category }, { status: 500 });
   }
 
-  const cap = spendCapUsd();
-  const reserveAmount = reservationUsd();
-  const day = utcDay();
-  let reserved = false;
-
   try {
-    // 7. Cache read (GitHub targets only)
-    if (cacheKey) {
-      let cached: { report: unknown; slug: string; createdAt?: number } | undefined;
-      try {
-        cached = await store.reportCache.get(cacheKey);
-      } catch (error) {
-        const category = categorizeScanError(error);
-        await scanJobs.fail(id, { errorCategory: category, durationMs: Date.now() - startedAt });
-        return Response.json({ error: safeErrorMessage(category), category }, { status: 500 });
-      }
-
-      const cachedMeta = reportMeta(cached?.report);
-      const isCompatibleCache =
-        cached !== undefined &&
-        isFreshCacheEntry(cached) &&
-        cachedMeta.promptVersion === PROMPT_VERSION &&
-        cachedMeta.rubricVersion === RUBRIC_VERSION &&
-        cachedMeta.engineVersion === ENGINE_VERSION;
-      if (isCompatibleCache && cached) {
-        await scanJobs.complete(id, {
-          reportSlug: cached.slug,
-          durationMs: 0,
-          cacheHit: true,
-          costUsd: 0,
-          model: (cachedMeta.usage?.model as string | undefined) ?? null,
-          engineVersion: ENGINE_VERSION,
-          rubricVersion: RUBRIC_VERSION,
-          promptVersion: PROMPT_VERSION,
-        });
-        return Response.json({
-          id,
-          status: "complete",
-          slug: cached.slug,
-          report: cached.report,
-          ...responseFields(cached.report, { cached: true, cacheHit: true }),
-        });
-      }
-    }
-
-    // 8. Reserve daily spend on cache miss
-    const reservation = await spendStore.reserve(day, reserveAmount, cap);
-    if (!reservation.ok) {
-      await scanJobs.fail(id, { errorCategory: "spend_cap", durationMs: Date.now() - startedAt });
-      return Response.json({ error: "daily spend cap reached", category: "spend_cap" }, { status: 503 });
-    }
-    reserved = true;
-
-    // 9. Scan
     let snapshot = localSnapshot;
     if (!snapshot) {
       if (validatedTarget.kind !== "github") {
@@ -232,7 +254,7 @@ export async function POST(request: Request) {
       }
       snapshot = await core.createSnapshotFromGitHub(validatedTarget.url, { sha: resolvedSha });
     }
-    localSnapshot = undefined; // ownership transferred to finally below
+    localSnapshot = undefined; // ownership transferred
 
     let report: unknown;
     try {
@@ -241,6 +263,7 @@ export async function POST(request: Request) {
       await Promise.resolve(snapshot?.dispose?.()).catch(() => undefined);
     }
 
+    // 7. Success: save report/cache, record cost, complete job, settle actual.
     const slug = makeSlug();
     await store.reports.set(slug, { slug, report, public: false });
     if (cacheKey) {
@@ -274,7 +297,6 @@ export async function POST(request: Request) {
       promptVersion: (meta.promptVersion as string | undefined) ?? PROMPT_VERSION,
     });
     await settleReservation(day, reserveAmount, costUsd, cap);
-    reserved = false;
 
     return Response.json({
       id,
@@ -284,12 +306,22 @@ export async function POST(request: Request) {
       ...responseFields(report, { cached: false, cacheHit: false }),
     });
   } catch (error) {
-    if (reserved) {
-      await settleReservation(day, reserveAmount, 0, cap);
-    }
+    // 8. Failure after job creation: fail the job with the safe category and settle 0.
+    await settleReservation(day, reserveAmount, 0, cap);
     const category = categorizeScanError(error);
-    await scanJobs.fail(id, { errorCategory: category, durationMs: Date.now() - startedAt }).catch(() => undefined);
-    const status = category === "invalid_input" ? 400 : category === "repo_not_found" ? 404 : category === "repo_too_large" ? 413 : category === "provider_error" || category === "provider_rate_limited" ? 503 : 500;
+    await scanJobs
+      .fail(id, { errorCategory: category, durationMs: Date.now() - startedAt })
+      .catch(() => undefined);
+    const status =
+      category === "invalid_input"
+        ? 400
+        : category === "repo_not_found"
+          ? 404
+          : category === "repo_too_large"
+            ? 413
+            : category === "provider_error" || category === "provider_rate_limited"
+              ? 503
+              : 500;
     return Response.json({ error: safeErrorMessage(category), category }, { status });
   } finally {
     await Promise.resolve(localSnapshot?.dispose?.()).catch(() => undefined);

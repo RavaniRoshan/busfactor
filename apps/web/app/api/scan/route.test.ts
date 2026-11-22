@@ -111,17 +111,14 @@ function post(target: string): Request {
 
 describe("POST /api/scan cache-path failure handling", () => {
   it("returns safe 500 without creating a job when cache lookup throws before job creation", async () => {
-    // Cache lookup happens after job creation in new flow? No - new flow creates job at step 6, cache read at 7.
-    // The brief says "6. Create a `running` job. 7. Read store.reportCache..." so cache lookup throw after job creation
-    // should fail the job. Adapt test intent to new flow: cache read throw after job creation returns safe 500 and fails job.
     vi.mocked(store.reportCache.get).mockRejectedValue(new Error("cache backend exploded with secrets"));
 
     const response = await POST(post("https://github.com/example/repo"));
     const body = (await response.json()) as { error?: string; category?: string };
 
     expect(response.status).toBe(500);
-    expect(scanJobs.create).toHaveBeenCalledTimes(1);
-    expect(scanJobs.fail).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ errorCategory: "internal_error" }));
+    expect(scanJobs.create).not.toHaveBeenCalled();
+    expect(scanJobs.fail).not.toHaveBeenCalled();
     expect(spendStore.reserve).not.toHaveBeenCalled();
     expect(body.category).toBe("internal_error");
     expect(body.error).toBe("Internal scan error.");
@@ -138,8 +135,8 @@ describe("POST /api/scan cache-path failure handling", () => {
     expect(response.status).toBe(503);
     expect(body.error).toBe("daily spend cap reached");
     expect(body.category).toBe("spend_cap");
-    expect(scanJobs.create).toHaveBeenCalledTimes(1);
-    expect(scanJobs.fail).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ errorCategory: "spend_cap" }));
+    expect(scanJobs.create).not.toHaveBeenCalled();
+    expect(scanJobs.fail).not.toHaveBeenCalled();
     expect(scanSnapshotMock).not.toHaveBeenCalled();
     expect(spendStore.settle).not.toHaveBeenCalled();
   });
@@ -174,7 +171,7 @@ describe("POST /api/scan cache-path failure handling", () => {
     expect(scanSnapshotMock).not.toHaveBeenCalled();
   });
 
-  it("settles reservation to zero when scan fails after reservation", async () => {
+  it("settles reservation to zero when scan fails after reservation and job creation", async () => {
     vi.mocked(store.reportCache.get).mockResolvedValue(undefined);
     vi.mocked(spendStore.reserve).mockResolvedValueOnce({ ok: true, usd: 0.05 });
     const snapshot = { dispose: vi.fn().mockResolvedValue(undefined) };
@@ -184,6 +181,7 @@ describe("POST /api/scan cache-path failure handling", () => {
     const response = await POST(post("https://github.com/example/repo"));
 
     expect(response.status).toBe(503);
+    expect(scanJobs.create).toHaveBeenCalledTimes(1);
     expect(spendStore.reserve).toHaveBeenCalledWith("2026-11-22", 0.05, 10);
     expect(spendStore.settle).toHaveBeenCalledWith("2026-11-22", 0.05, 0);
     expect(scanJobs.fail).toHaveBeenCalledWith(
@@ -193,18 +191,34 @@ describe("POST /api/scan cache-path failure handling", () => {
     expect(snapshot.dispose).toHaveBeenCalled();
   });
 
-  it("settles reservation to 0 and returns safe error when job create throws after reservation", async () => {
-    // In the new flow, reservation happens after job creation, so this case becomes: reservation failure before scan
-    // is handled; job-create failure happens before reservation. Keep the invariant: no leaked reservation.
+  it("returns safe 500 without creating a job when spend reservation throws", async () => {
     vi.mocked(store.reportCache.get).mockResolvedValue(undefined);
+    vi.mocked(spendStore.reserve).mockRejectedValueOnce(new Error("db exploded with secrets"));
+
+    const response = await POST(post("https://github.com/example/repo"));
+    const body = (await response.json()) as { error?: string; category?: string };
+
+    expect(response.status).toBe(500);
+    expect(scanJobs.create).not.toHaveBeenCalled();
+    expect(scanJobs.fail).not.toHaveBeenCalled();
+    expect(scanSnapshotMock).not.toHaveBeenCalled();
+    expect(spendStore.settle).not.toHaveBeenCalled();
+    expect(body.category).toBe("internal_error");
+    expect(body.error).toBe("Internal scan error.");
+    expect(body.error).not.toContain("secrets");
+  });
+
+  it("settles reservation to 0 and returns safe error when job create throws after reservation", async () => {
+    vi.mocked(store.reportCache.get).mockResolvedValue(undefined);
+    vi.mocked(spendStore.reserve).mockResolvedValueOnce({ ok: true, usd: 0.05 });
     vi.mocked(scanJobs.create).mockRejectedValueOnce(new Error("job create failed with secrets"));
 
     const response = await POST(post("https://github.com/example/repo"));
     const body = (await response.json()) as { error?: string; category?: string };
 
     expect(response.status).toBe(500);
-    expect(spendStore.reserve).not.toHaveBeenCalled();
-    expect(spendStore.settle).not.toHaveBeenCalled();
+    expect(spendStore.reserve).toHaveBeenCalledWith("2026-11-22", 0.05, 10);
+    expect(spendStore.settle).toHaveBeenCalledWith("2026-11-22", 0.05, 0);
     expect(scanJobs.fail).not.toHaveBeenCalled();
     expect(scanSnapshotMock).not.toHaveBeenCalled();
     expect(body.category).toBe("internal_error");
