@@ -25,6 +25,14 @@ describe("durable records", () => {
     expect(await records.countWaitlist()).toBeGreaterThan(0);
   });
 
+  it("matches unique-index behavior across delete/re-add", async () => {
+    const email = `deleted-${Date.now()}@example.com`;
+    expect((await records.addWaitlist({ email })).created).toBe(true);
+    expect(await records.deleteWaitlist(email)).toBe(1);
+    expect((await records.addWaitlist({ email })).created).toBe(true);
+    expect((await records.addWaitlist({ email: email.toUpperCase() })).created).toBe(false);
+  });
+
   it("summarizes explicit feedback answers", async () => {
     await records.addFeedback({ reportSlug: `r-${Date.now()}`, helpful: true });
     await records.addFeedback({ reportSlug: `r-${Date.now()}`, helpful: false });

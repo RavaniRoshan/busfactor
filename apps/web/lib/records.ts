@@ -96,9 +96,7 @@ function createMemoryRecords(): Records {
     async addWaitlist(input) {
       const email = normalizeEmail(input.email);
       if (!email) return { created: false };
-      const exists = state.waitlist.some(
-        (entry) => entry.email === email && entry.status === "active"
-      );
+      const exists = state.waitlist.some((entry) => entry.email === email);
       if (exists) return { created: false };
       state.waitlist.push({
         id: randomUUID(),
@@ -132,14 +130,9 @@ function createMemoryRecords(): Records {
     async deleteWaitlist(email) {
       const normalized = normalizeEmail(email);
       if (!normalized) return 0;
-      let count = 0;
-      for (const entry of state.waitlist) {
-        if (entry.email === normalized && entry.status === "active") {
-          entry.status = "deleted";
-          count += 1;
-        }
-      }
-      return count;
+      const before = state.waitlist.length;
+      state.waitlist = state.waitlist.filter((entry) => entry.email !== normalized);
+      return before - state.waitlist.length;
     },
     async deleteFeedback(id) {
       const index = state.feedback.findIndex((entry) => entry.id === id);
