@@ -1,7 +1,12 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAdminRequest } from "@/lib/admin-auth";
+import { hasDatabase, getPool } from "@/lib/db";
+import { buildDashboardMetrics, dashboardRange, type DashboardMetrics } from "@/lib/metrics";
+import { getAnalyticsSummary } from "@/lib/posthog";
 import { records } from "@/lib/records";
 import { scanJobs } from "@/lib/scan-jobs";
+import { spendStore, utcDay } from "@/lib/spend";
 import { store } from "@/lib/store";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedNumber } from "@/components/animated-number";
@@ -9,15 +14,57 @@ import { AdminLogoutButton } from "./logout-button";
 
 export const metadata = { robots: { index: false, follow: false } };
 
-function Kpi({ label, value, unit, note }: { label: string; value: string | number; unit: string; note?: string }) {
+function spendCapUsd(): number {
+  const raw = Number(process.env.BUSFACTOR_DAILY_SPEND_CAP_USD ?? "10");
+  return Number.isFinite(raw) && raw >= 0 ? raw : 10;
+}
+
+async function resolveDatabaseHealth(): Promise<"ok" | "memory" | "error"> {
+  if (!hasDatabase()) return "memory";
+  try {
+    await getPool().query("SELECT 1");
+    return "ok";
+  } catch {
+    return "error";
+  }
+}
+
+function formatUsd(value: number | null): string {
+  if (value === null) return "—";
+  return `$${value.toFixed(6)}`;
+}
+
+function formatUsdShort(value: number): string {
+  return `$${value.toFixed(4)}`;
+}
+
+function pct(value: number | null): string {
+  if (value === null) return "—";
+  return `${value}%`;
+}
+
+function Kpi({
+  label,
+  value,
+  unit,
+  note,
+}: {
+  label: string;
+  value: string | number;
+  unit?: string;
+  note?: string;
+}) {
+  const numeric = typeof value === "number";
   return (
     <div className="rounded-corner-lg border border-border-secondary bg-surface-secondary-bg p-xl">
       <p className="text-label-sm text-text-secondary">{label}</p>
       <p className="mt-sm flex items-baseline gap-sm">
-        <span className="font-mono type-display text-text-primary"><AnimatedNumber value={typeof value === "number" ? value : Number(value.replace("%",""))} />{typeof value === "string" && value.includes("%") ? "%" : ""}</span>
-        <span className="text-label-sm text-text-secondary">{unit}</span>
+        <span className="font-mono type-display text-text-primary">
+          {numeric ? <AnimatedNumber value={value} /> : value}
+        </span>
+        {unit ? <span className="text-label-sm text-text-secondary">{unit}</span> : null}
       </p>
-      {note && <p className="mt-sm text-label-sm text-text-secondary">{note}</p>}
+      {note ? <p className="mt-sm text-label-sm text-text-secondary">{note}</p> : null}
     </div>
   );
 }
@@ -25,143 +72,310 @@ function Kpi({ label, value, unit, note }: { label: string; value: string | numb
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
     <section aria-labelledby={id} className="rounded-corner-lg border border-border-secondary bg-surface-secondary-bg p-xl">
-      <h2 id={id} className="text-label font-medium text-text-primary">{title}</h2>
+      <h2 id={id} className="text-label font-medium text-text-primary">
+        {title}
+      </h2>
       <div className="mt-lg">{children}</div>
     </section>
   );
 }
 
-export default async function AdminMetricsPage() {
+function StatRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <li className="flex items-center justify-between gap-lg border-b border-border-secondary py-sm last:border-0">
+      <span className="text-label-sm text-text-secondary">{label}</span>
+      <span className="font-mono text-label-sm tabular-nums text-text-primary">{value}</span>
+    </li>
+  );
+}
+
+function RangeSelector({ current }: { current: 7 | 30 | 90 }) {
+  const options: Array<7 | 30 | 90> = [7, 30, 90];
+  return (
+    <nav aria-label="Dashboard range" className="flex items-center gap-sm">
+      {options.map((days) => {
+        const active = days === current;
+        return (
+          <Link
+            key={days}
+            href={`/admin/metrics?days=${days}`}
+            className={`rounded-corner-md border px-md py-xs text-label-sm ${
+              active
+                ? "border-border-primary bg-bg-subtle text-text-primary"
+                : "border-border-secondary text-text-secondary hover:text-text-primary"
+            }`}
+            aria-current={active ? "page" : undefined}
+          >
+            {days}d
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function AcquisitionSection({ metrics, projectId }: { metrics: DashboardMetrics; projectId: string | undefined }) {
+  const a = metrics.acquisition;
+  return (
+    <Section id="acquisition" title="B. Acquisition">
+      {!a.available ? (
+        <p className="text-label-sm text-text-secondary">PostHog not configured.</p>
+      ) : (
+        <>
+          <div className="grid gap-xl sm:grid-cols-2 lg:grid-cols-3">
+            <Kpi label="Visitors" value={a.visitors ?? 0} unit="people" />
+            <Kpi label="Landing visitors" value={a.landingVisitors ?? 0} unit="people" />
+            <Kpi label="Scanner CTA clicks" value={a.scannerCtaClicks ?? 0} unit="clicks" />
+            <Kpi label="Scan page views" value={a.scanPageViews ?? 0} unit="views" />
+            <Kpi label="Landing conversion" value={pct(a.landingConversionPct)} unit="scan / landing" />
+          </div>
+          <div className="mt-xl grid gap-xl lg:grid-cols-2">
+            <div>
+              <h3 className="text-label-sm font-medium text-text-primary">Campaigns</h3>
+              {a.campaigns.length === 0 ? (
+                <p className="mt-sm text-label-sm text-text-secondary">No data yet.</p>
+              ) : (
+                <div className="mt-sm overflow-x-auto">
+                  <table className="w-full text-left text-label-sm">
+                    <thead>
+                      <tr className="border-b border-border-secondary text-text-secondary">
+                        <th className="py-sm pr-lg">Campaign</th>
+                        <th className="py-sm">Visitors</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {a.campaigns.map((row) => (
+                        <tr key={row.campaign} className="border-b border-border-secondary last:border-0">
+                          <td className="py-sm pr-lg font-mono text-xs">{row.campaign}</td>
+                          <td className="py-sm font-mono tabular-nums">{row.visitors}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div>
+              <h3 className="text-label-sm font-medium text-text-primary">Sources</h3>
+              {a.sources.length === 0 ? (
+                <p className="mt-sm text-label-sm text-text-secondary">No data yet.</p>
+              ) : (
+                <div className="mt-sm overflow-x-auto">
+                  <table className="w-full text-left text-label-sm">
+                    <thead>
+                      <tr className="border-b border-border-secondary text-text-secondary">
+                        <th className="py-sm pr-lg">Source</th>
+                        <th className="py-sm">Visitors</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {a.sources.map((row) => (
+                        <tr key={row.source} className="border-b border-border-secondary last:border-0">
+                          <td className="py-sm pr-lg font-mono text-xs">{row.source}</td>
+                          <td className="py-sm font-mono tabular-nums">{row.visitors}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+          {projectId ? (
+            <p className="mt-lg text-label-sm text-text-secondary">
+              <a
+                href={`https://us.posthog.com/project/${projectId}`}
+                className="underline underline-offset-4 hover:text-text-primary"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open PostHog project
+              </a>
+            </p>
+          ) : null}
+        </>
+      )}
+    </Section>
+  );
+}
+
+export default async function AdminMetricsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ days?: string }>;
+}) {
   if (!(await isAdminRequest())) {
     redirect("/admin/login");
   }
 
-  const [waitlistCount, validation, jobs, health, reportCount] = await Promise.all([
-    records.countWaitlist(),
-    records.feedbackSummary(),
-    scanJobs.list(20),
-    scanJobs.metrics(30),
-    store.reports.count(),
-  ]);
+  const sp = await searchParams;
+  const days = dashboardRange(sp);
+  const sinceMs = Date.now() - days * 24 * 60 * 60 * 1000;
 
-  const action =
-    health.failed > 0
-      ? "Review the failed scan IDs below before inviting new users."
-      : validation.answered === 0
-        ? "No feedback yet — ask the first five scanned users if the report helped."
-        : "No action from this data. Keep watching the fail rate and feedback.";
+  const [waitlistCount, feedback, jobs, reportCount, costSummary, spendTodayUsd, analytics, dbHealth] =
+    await Promise.all([
+      records.countWaitlist(),
+      records.feedbackSummary(),
+      scanJobs.list(500),
+      store.reports.count(),
+      scanJobs.costSummary(days),
+      spendStore.get(utcDay()),
+      getAnalyticsSummary(days),
+      resolveDatabaseHealth(),
+    ]);
 
-  const statuses = [
-    { label: "Completed", value: health.complete, variant: "success" as const },
-    { label: "Failed", value: health.failed, variant: "danger" as const },
-    { label: "Running", value: health.running, variant: "warning" as const },
-  ];
+  const filteredJobs = jobs.filter((job) => Date.parse(job.createdAt) >= sinceMs);
+
+  const metrics = buildDashboardMetrics({
+    jobs: filteredJobs,
+    costs: {
+      totalUsd: costSummary.totalUsd,
+      averageUsd: costSummary.averageUsd === 0 && filteredJobs.length === 0 ? null : costSummary.averageUsd,
+      medianUsd: costSummary.medianUsd === 0 && filteredJobs.length === 0 ? null : costSummary.medianUsd,
+    },
+    waitlist: waitlistCount,
+    feedback,
+    reports: reportCount,
+    spendTodayUsd,
+    analytics,
+    databaseHealth: dbHealth,
+    spendCapUsd: spendCapUsd(),
+  });
+
+  const projectId = process.env.POSTHOG_PROJECT_ID?.trim();
 
   return (
     <main className="min-h-screen bg-brand-tertiary px-xl py-4xl text-text-primary md:px-2xl">
       <div className="mx-auto w-full max-w-page">
         <div className="flex flex-wrap items-center justify-between gap-md">
           <div>
-            <h1 className="type-display">BusFactor operations</h1>
+            <h1 className="type-display">BusFactor KPI dashboard</h1>
             <p className="mt-sm text-label-sm text-text-secondary">
-              Scans, reports and validation signal. All numbers come from the live store and durable records.
+              Real data only. Range: last {days} days. No customer emails are displayed.
             </p>
           </div>
-          <div className="flex items-center gap-md">
+          <div className="flex flex-wrap items-center gap-md">
+            <RangeSelector current={days} />
             <Badge variant="warning">Internal · noindex</Badge>
             <AdminLogoutButton />
           </div>
         </div>
 
-        <div className="mt-3xl grid gap-xl sm:grid-cols-2 lg:grid-cols-4">
-          <Kpi label="Scans" value={health.total} unit="jobs" />
-          <Kpi label="Reports" value={reportCount} unit="reports" />
-          <Kpi
-            label="Fail rate"
-            value={`${health.failRate}%`}
-            unit={`of ${health.total} scans`}
-            note="Provisional alert threshold: 5%"
-          />
-          <Kpi label="Waitlist" value={waitlistCount} unit="emails" note="Email addresses are never displayed" />
-        </div>
-
-        <div className="mt-xl grid gap-xl lg:grid-cols-2">
-          <Section id="ops-health" title="Is it working? — job status (count)">
-            <ul className="flex flex-col gap-lg">
-              {statuses.map((status) => (
-                <li key={status.label} className="flex items-center justify-between gap-lg">
-                  <Badge variant={status.variant}>{status.label}</Badge>
-                  <span className="font-mono tabular-nums">{status.value}</span>
-                </li>
-              ))}
-            </ul>
-            {health.total > 0 && (
-              <div className="mt-xl flex h-xs w-full overflow-hidden rounded-corner-full bg-bg-subtle" aria-hidden="true">
-                {statuses.map((status) => (
-                  <span
-                    key={status.label}
-                    className={`block h-full ${status.variant === "success" ? "bg-success" : status.variant === "danger" ? "bg-danger" : "bg-warning"}`}
-                    style={{ width: `${(status.value / health.total) * 100}%` }}
-                  />
-                ))}
-              </div>
-            )}
+        <div className="mt-3xl grid gap-xl">
+          <Section id="business-overview" title="A. Business overview">
+            <div className="grid gap-xl sm:grid-cols-2 lg:grid-cols-4">
+              <Kpi label="Total scans" value={metrics.business.totalScans} unit="scans" />
+              <Kpi label="Successful scans" value={metrics.business.successfulScans} unit="scans" />
+              <Kpi label="Reports" value={metrics.business.reports} unit="reports" />
+              <Kpi label="Waitlist" value={metrics.business.waitlist} unit="signups" />
+              <Kpi label="Feedback answers" value={metrics.business.feedbackAnswers} unit="answers" />
+              <Kpi label="Paying customers" value="Not enabled" note="Billing is not enabled in this build." />
+              <Kpi label="MRR" value="Not enabled" note="Billing is not enabled in this build." />
+            </div>
           </Section>
 
-          <Section id="ops-validation" title="Is it helping? — feedback (count)">
-            <ul className="flex flex-col gap-lg">
-              <li className="flex items-center justify-between gap-lg">
-                <span className="text-label-sm text-text-secondary">Would have helped · Yes</span>
-                <span className="font-mono tabular-nums">{validation.yes}</span>
-              </li>
-              <li className="flex items-center justify-between gap-lg">
-                <span className="text-label-sm text-text-secondary">Would have helped · No</span>
-                <span className="font-mono tabular-nums">{validation.no}</span>
-              </li>
-              <li className="flex items-center justify-between gap-lg">
-                <span className="text-label-sm text-text-secondary">Explicit answers</span>
-                <span className="font-mono tabular-nums">{validation.answered}</span>
-              </li>
-            </ul>
-            {validation.answered === 0 && (
-              <p className="mt-lg text-label-sm text-text-secondary">No explicit answers recorded yet.</p>
-            )}
-          </Section>
-        </div>
+          <AcquisitionSection metrics={metrics} projectId={projectId} />
 
-        <div className="mt-xl grid gap-xl">
-          <Section id="ops-jobs" title="Where does it fail? — recent jobs (newest first)">
-            {jobs.length === 0 ? (
-              <p className="text-label-sm text-text-secondary">No scans recorded.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-label-sm">
-                  <thead>
-                    <tr className="border-b border-border-secondary text-text-secondary">
-                      <th className="py-sm pr-lg">Job ID</th>
-                      <th className="py-sm pr-lg">Status</th>
-                      <th className="py-sm">Report</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {jobs.map((job) => (
-                      <tr key={job.id} className="border-b border-border-secondary last:border-0">
-                        <td className="py-sm pr-lg font-mono text-xs">{job.id}</td>
-                        <td className="py-sm pr-lg">{job.status}</td>
-                        <td className="py-sm font-mono text-xs">{job.reportSlug ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            <p className="mt-lg text-label-sm text-text-secondary">
-              Error messages are omitted — scan output is untrusted and may contain secrets.
+          <Section id="activation-engagement" title="C. Activation and engagement">
+            <div className="grid gap-xl sm:grid-cols-2 lg:grid-cols-4">
+              <Kpi label="Scan starts" value={metrics.engagement.scanStarts} unit="jobs" />
+              <Kpi label="Successes" value={metrics.engagement.successes} unit="jobs" />
+              <Kpi label="Failures" value={metrics.engagement.failures} unit="jobs" />
+              <Kpi label="Completion rate" value={`${metrics.engagement.completionRatePct}%`} unit="complete" />
+              <Kpi
+                label="Report views"
+                value={metrics.engagement.reportViews ?? "—"}
+                unit={metrics.acquisition.available ? "views" : "not configured"}
+              />
+              <Kpi
+                label="Report downloads"
+                value={metrics.engagement.reportDownloads ?? "—"}
+                unit={metrics.acquisition.available ? "downloads" : "not configured"}
+              />
+              <Kpi
+                label="Reports shared"
+                value={metrics.engagement.reportsShared ?? "—"}
+                unit={metrics.acquisition.available ? "shares" : "not configured"}
+              />
+              <Kpi
+                label="Feedback submitted"
+                value={metrics.engagement.feedbackSubmitted ?? "—"}
+                unit={metrics.acquisition.available ? "events" : "not configured"}
+              />
+              <Kpi
+                label="Positive feedback"
+                value={pct(metrics.engagement.positiveFeedbackRate)}
+                unit="of explicit answers"
+              />
+              <Kpi
+                label="Repeat scan rate"
+                value={pct(metrics.engagement.repeatScanRate)}
+                unit="not available"
+              />
+              <Kpi
+                label="Qualified scans (7d)"
+                value={metrics.engagement.qualifiedScans7d ?? "—"}
+                unit="North Star"
+                note="Scan succeeded + download/share/feedback within 7 days."
+              />
+            </div>
+          </Section>
+
+          <Section id="operational-health" title="D. Operational health">
+            <div className="grid gap-xl sm:grid-cols-2 lg:grid-cols-4">
+              <Kpi label="Success rate" value={`${metrics.operations.successRatePct}%`} unit="of jobs" />
+              <Kpi label="Failure rate" value={`${metrics.operations.failureRatePct}%`} unit="of jobs" />
+              <Kpi
+                label="Median duration"
+                value={metrics.operations.medianDurationMs === null ? "—" : Math.round(metrics.operations.medianDurationMs / 1000)}
+                unit={metrics.operations.medianDurationMs === null ? "no data" : "seconds"}
+              />
+              <Kpi
+                label="P95 duration"
+                value={metrics.operations.p95DurationMs === null ? "—" : Math.round(metrics.operations.p95DurationMs / 1000)}
+                unit={metrics.operations.p95DurationMs === null ? "no data" : "seconds"}
+              />
+              <Kpi label="Running jobs" value={metrics.operations.runningJobs} unit="jobs" />
+              <Kpi label="Failed jobs" value={metrics.operations.failedJobs} unit="jobs" />
+              <Kpi label="Cache hit rate" value={`${metrics.operations.cacheHitRatePct}%`} unit="of complete" />
+              <Kpi label="Database health" value={metrics.operations.databaseHealth} unit="status" />
+              <Kpi label="Provider errors" value={metrics.operations.providerErrors} unit="jobs" />
+              <Kpi label="Spend today" value={formatUsdShort(metrics.operations.spendTodayUsd)} unit="USD" />
+              <Kpi label="Spend cap" value={formatUsdShort(metrics.operations.spendCapUsd)} unit="USD/day" />
+              <Kpi label="Spend used" value={`${metrics.operations.spendPct}%`} unit="of cap" />
+            </div>
+          </Section>
+
+          <Section id="revenue" title="E. Revenue">
+            <p className="text-label text-text-primary">
+              Billing is not enabled in this build; no revenue data exists.
             </p>
           </Section>
 
-          <Section id="ops-action" title="What should I do?">
-            <p className="text-label text-text-primary">{action}</p>
+          <Section id="unit-economics" title="F. Unit economics">
+            <div className="grid gap-xl sm:grid-cols-2 lg:grid-cols-4">
+              <Kpi label="Total LLM cost" value={formatUsd(metrics.unitEconomics.totalLlmCostUsd)} unit="USD" />
+              <Kpi
+                label="Avg cost / attempt"
+                value={formatUsd(metrics.unitEconomics.averageCostPerAttemptUsd)}
+                unit="USD"
+              />
+              <Kpi
+                label="Median cost / attempt"
+                value={formatUsd(metrics.unitEconomics.medianCostPerAttemptUsd)}
+                unit="USD"
+              />
+              <Kpi
+                label="Cost / successful scan"
+                value={formatUsd(metrics.unitEconomics.costPerSuccessfulScanUsd)}
+                unit="USD"
+              />
+            </div>
+            <ul className="mt-xl">
+              {metrics.unitEconomics.notTracked.map((item) => (
+                <StatRow key={item} label={item} value="Not tracked" />
+              ))}
+            </ul>
           </Section>
         </div>
       </div>

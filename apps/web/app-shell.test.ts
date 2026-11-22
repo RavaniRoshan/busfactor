@@ -81,15 +81,18 @@ describe("webapp shell", () => {
   it("keeps the operator dashboard answer-first, noindex, and session-protected", () => {
     const page = readFileSync(path.join(root, "app/admin/metrics/page.tsx"), "utf8");
     expect(page).toContain("robots: { index: false, follow: false }");
-    for (const question of ["Is it working?", "Where does it fail?", "Is it helping?", "What should I do?"]) {
-      expect(page).toContain(question);
+    for (const label of [
+      "A. Business overview",
+      "B. Acquisition",
+      "C. Activation and engagement",
+      "D. Operational health",
+      "E. Revenue",
+      "F. Unit economics",
+    ]) {
+      expect(page).toContain(label);
     }
-    expect(page).toContain("scanJobs.list(20)");
-    expect(page).toContain("scanJobs.metrics(30)");
-    expect(page).not.toContain("store.jobs.values()");
     expect(page).toContain("isAdminRequest");
     expect(page).toContain('redirect("/admin/login")');
-    expect(page).not.toContain("searchParams");
     expect(page).not.toContain("BUSFACTOR_ADMIN_TOKEN");
   });
 
