@@ -122,3 +122,27 @@
 - Alternatives rejected: npm workspaces (would diverge from the documented commands); installing pnpm globally with npm (unnecessary global mutation).
 - Environment note: No `ANTHROPIC_API_KEY` is present. Live LLM gates are marked `stale`; implementation will use the mock provider until a key is available.
 - Scope note: `apps/web` is intentionally only a typed shell at P0.1. The web surface belongs to P1.8 and remains gated by Gate A.
+
+## 2026-11-22 — Task 11 (Full Verification, Documentation, and Handoff)
+
+- Decision: Run full Task 11 verification across main and marketing worktrees, record actual results, update project state/docs, and copy the session plan into the repository. No deployment, no push to main, no npm publish.
+- Branch taken: Executed required main commands (`pnpm install --frozen-lockfile`, `pnpm gate`, `pnpm verify:build`, `pnpm verify`) and marketing commands (`npm ci --legacy-peer-deps`, `npm test`, `npm run typecheck`, `npm run build`, robots/sitemap/CTA checks). Ran local security scenarios against `next start` on :3199 with controlled env vars; recorded observed HTTP statuses/bodies. Marked PostHog live verification BLOCKED due missing keys.
+- Why: The Task 11 brief requires evidence-based handoff and forbids inventing verification results or performing human-gated deployment/publication actions.
+- Evidence:
+  - Main install: PASS (`pnpm install --frozen-lockfile`, lockfile up to date, pnpm v10.15.0).
+  - Main gate: PASS (`pnpm gate` = typecheck+lint+test). Tests: `packages/core` 14 files/48 tests passed; `apps/web` 19 files/91 tests passed.
+  - Main verify:build: PASS (Next build compiled, 16/16 static pages generated).
+  - Main verify: Initially FAIL (Playwright 20 passed / 1 failed / 21 total). Failing: `tests/functional.spec.ts:68 "API gates reject invalid input and protect admin metrics"` expected `"BusFactor operations"`, but current page heading is `"BusFactor KPI dashboard"` (`apps/web/app/admin/metrics/page.tsx:281`) after Task 7 rename. Follow-up fix updated the stale assertion to `"BusFactor KPI dashboard"`; rerun `pnpm gate` PASS and `pnpm verify` PASS (21 passed / 0 failed / 21 total, 10.9s).
+  - Marketing: PASS install/test/typecheck/build/robots. `npm ci --legacy-peer-deps` reported 2 high severity audit warnings; vitest 1 file/3 tests passed; `tsc --noEmit` passed; Vite build passed. `dist/robots.txt` contains sitemap. Scan CTA URL not in static `dist/index.html` but present in built JS/source (`VITE_APP_URL` default `https://heir-weld.vercel.app`).
+  - Local security scenarios (actual): local path `fixtures/repos/clean` -> 400 `invalid_input`; `http://169.254.169.254/latest/meta-data` -> 400 `invalid_input`; `https://github.com.evil.com/a/b` -> 400 `invalid_input`; `GET /admin/metrics?token=test-admin-token` without cookie -> 307 `Location: /admin/login`; feedback missing slug -> 404 `{"error":"report not found"}`; kill switch server (`BUSFACTOR_KILL_SWITCH=1`) POST `/api/scan` public repo -> 503 `{"error":"scans are temporarily disabled","category":"unavailable"}`.
+  - Analytics live verification: BLOCKED: PostHog keys not supplied.
+- Alternatives rejected: Changing the dashboard heading back to "BusFactor operations" (would regress Task 7 naming); fabricating PostHog live-event evidence; running deployment/publish commands.
+
+## 2026-11-22 — Final whole-branch review fix wave
+
+- Decision: Address the two Important final-review findings: add same-origin checks to admin mutation routes and scope PostHog HogQL metrics by `properties.surface`. Keep all deferred minors as tracked follow-ups.
+- Branch taken: Added shared `isSameOrigin`/`assertSameOrigin` in `apps/web/lib/admin-auth.ts` and applied it to admin session POST/DELETE and both admin record-deletion routes. Scoped marketing summary/breakdown queries to `surface = 'marketing'` and product/qualified-scan queries to `surface = 'product'`. Aligned the privacy "Last updated" date with terms/removal.
+- Why: The final review flagged destructive admin routes without the origin defense already used at login, and mixed product/marketing metrics in a shared PostHog project.
+- Evidence: Commit `fee428d`; focused tests 28/28; `pnpm gate` PASS (core 48 tests, web 99 tests); `pnpm verify` PASS (Playwright 21/21); scoped re-review clean.
+- Alternatives rejected: A second fix wave (not needed); hardcoding a single PostHog surface filter across the mixed summary query (would hide one surface's metrics).
+- Residual: The unscoped total `visitors` count is intentionally a cross-surface total; all per-metric counts and funnels are surface-scoped. PostHog live verification remains blocked on keys.

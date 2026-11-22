@@ -1,13 +1,4 @@
-import { neonConfig, Pool } from "@neondatabase/serverless";
-
-export interface ScanJob {
-  id: string;
-  status: "running" | "complete" | "failed";
-  slug?: string;
-  report?: unknown;
-  error?: string;
-  public: boolean;
-}
+import { ensureSchema, getPool, hasDatabase } from "./db";
 
 export interface StoredReport {
   slug: string;
@@ -26,17 +17,10 @@ interface RateLimitStore extends KV<{ day: string; count: number }> {
   consume(key: string, day: string, max: number): Promise<boolean>;
 }
 
-interface SpendStore {
-  get(): Promise<{ usd: number }>;
-  add(usd: number): Promise<{ usd: number }>;
-}
-
 export interface Store {
-  jobs: KV<ScanJob>;
   reports: KV<StoredReport>;
-  reportCache: KV<{ report: unknown; slug: string }>;
+  reportCache: KV<{ report: unknown; slug: string; createdAt?: number }>;
   rateLimits: RateLimitStore;
-  spend: SpendStore;
 }
 
 type GlobalStore = typeof globalThis & {
@@ -64,14 +48,11 @@ function createMemoryStore(): Store {
   const globalStore = globalThis as GlobalStore;
   if (globalStore.__busfactorStore) return globalStore.__busfactorStore;
 
-  const jobs = new Map<string, ScanJob>();
   const reports = new Map<string, StoredReport>();
-  const reportCache = new Map<string, { report: unknown; slug: string }>();
+  const reportCache = new Map<string, { report: unknown; slug: string; createdAt?: number }>();
   const rateLimits = new Map<string, { day: string; count: number }>();
-  const spend = { usd: 0 };
 
   const store: Store = {
-    jobs: memoryKV(jobs),
     reports: memoryKV(reports),
     reportCache: memoryKV(reportCache),
     rateLimits: {
@@ -87,53 +68,9 @@ function createMemoryStore(): Store {
         return true;
       },
     },
-    spend: {
-      async get() {
-        return { usd: spend.usd };
-      },
-      async add(usd) {
-        spend.usd += usd;
-        return { usd: spend.usd };
-      },
-    },
   };
   globalStore.__busfactorStore = store;
   return store;
-}
-
-let pool: Pool | null = null;
-let ready: Promise<void> | null = null;
-
-function connectionString(): string | undefined {
-  return process.env.DATABASE_URL ?? process.env.NEON_DATABASE_URL ?? process.env.POSTGRES_URL;
-}
-
-function getPool(): Pool {
-  const url = connectionString();
-  if (!url) throw new Error("No Postgres connection string is set");
-  if (!pool) {
-    // HTTP queries avoid needing a WebSocket in serverless runtimes.
-    neonConfig.poolQueryViaFetch = true;
-    pool = new Pool({ connectionString: url });
-  }
-  return pool;
-}
-
-function ensureSchema(): Promise<void> {
-  if (!ready) {
-    ready = getPool()
-      .query(
-        `CREATE TABLE IF NOT EXISTS busfactor_store (
-          namespace text NOT NULL,
-          key text NOT NULL,
-          value jsonb NOT NULL,
-          updated_at timestamptz NOT NULL DEFAULT now(),
-          PRIMARY KEY (namespace, key)
-        )`
-      )
-      .then(() => undefined);
-  }
-  return ready;
 }
 
 function pgKV<T>(namespace: string): KV<T> {
@@ -175,9 +112,8 @@ function pgKV<T>(namespace: string): KV<T> {
 
 function createPostgresStore(): Store {
   return {
-    jobs: pgKV<ScanJob>("jobs"),
     reports: pgKV<StoredReport>("reports"),
-    reportCache: pgKV<{ report: unknown; slug: string }>("report_cache"),
+    reportCache: pgKV<{ report: unknown; slug: string; createdAt?: number }>("report_cache"),
     rateLimits: {
       ...pgKV<{ day: string; count: number }>("rate_limits"),
       async consume(key, day, max) {
@@ -196,32 +132,10 @@ function createPostgresStore(): Store {
         return Number(result.rows[0]?.count ?? 0) <= max;
       },
     },
-    spend: {
-      async get() {
-        await ensureSchema();
-        const result = await getPool().query(
-          `SELECT value FROM busfactor_store WHERE namespace = 'meta' AND key = 'spend'`
-        );
-        return { usd: Number(result.rows[0]?.value?.usd ?? 0) };
-      },
-      async add(usd) {
-        await ensureSchema();
-        const result = await getPool().query(
-          `INSERT INTO busfactor_store (namespace, key, value) VALUES ('meta', 'spend', $1::jsonb)
-           ON CONFLICT (namespace, key) DO UPDATE SET
-             value = jsonb_set(COALESCE(busfactor_store.value, '{"usd":0}'::jsonb), '{usd}',
-               to_jsonb(COALESCE((busfactor_store.value->>'usd')::numeric, 0) + $2::numeric)),
-             updated_at = now()
-           RETURNING value`,
-          [JSON.stringify({ usd }), usd]
-        );
-        return { usd: Number(result.rows[0]?.value?.usd ?? 0) };
-      },
-    },
   };
 }
 
-export const store: Store = connectionString() ? createPostgresStore() : createMemoryStore();
+export const store: Store = hasDatabase() ? createPostgresStore() : createMemoryStore();
 
 export function makeSlug() {
   return Math.random().toString(36).slice(2, 10);

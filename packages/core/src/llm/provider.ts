@@ -4,9 +4,30 @@ export interface LLMRequest {
   maxTokens?: number;
 }
 
+export interface LLMUsage {
+  provider: string;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  cachedTokens: number;
+  requests: number;
+}
+
 export interface LLMProvider {
   readonly name: string;
   complete(request: LLMRequest): Promise<string>;
+  getUsage?(): LLMUsage;
+}
+
+export function emptyUsage(provider: string, model = ""): LLMUsage {
+  return {
+    provider,
+    model,
+    inputTokens: 0,
+    outputTokens: 0,
+    cachedTokens: 0,
+    requests: 0,
+  };
 }
 
 export function extractJson(text: string): string {

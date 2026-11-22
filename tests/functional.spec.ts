@@ -65,23 +65,50 @@ test("report routes are noindex and support downloads", async ({ page, request }
   }
 });
 
-test("API gates reject invalid input and protect admin metrics", async ({ request }) => {
+test("API gates reject invalid input and protect admin metrics", async ({ request, playwright, baseURL }) => {
   const badEmail = await request.post("/api/waitlist", { data: { email: "not-an-email" } });
   expect(badEmail.status()).toBe(400);
 
-  const unauthenticated = await request.get("/admin/metrics");
-  expect(await unauthenticated.text()).toContain("Unauthorized");
+  const unauthenticated = await request.get("/admin/metrics", { maxRedirects: 0 });
+  expect([307, 308]).toContain(unauthenticated.status());
 
-  const authenticated = await request.get("/admin/metrics?token=audit-test-token");
-  expect(await authenticated.text()).toContain("BusFactor operations");
+  const wrong = await request.post("/api/admin/session", { data: { token: "nope" } });
+  expect(wrong.status()).toBe(401);
+
+  const login = await request.post("/api/admin/session", { data: { token: "audit-test-token" } });
+  expect(login.status()).toBe(200);
+  const authenticated = await request.get("/admin/metrics");
+  expect(authenticated.status()).toBe(200);
+  expect(await authenticated.text()).toContain("BusFactor KPI dashboard");
+
+  const fresh = await playwright.request.newContext({ baseURL });
+  try {
+    const queryToken = await fresh.get("/admin/metrics?token=audit-test-token", { maxRedirects: 0 });
+    expect([307, 308]).toContain(queryToken.status());
+  } finally {
+    await fresh.dispose();
+  }
+});
+
+test("scan rejects malicious URLs with safe category and no completed job leak", async ({ request }) => {
+  const response = await request.post("/api/scan", { data: { target: "https://169.254.169.254/a/b" } });
+  expect(response.status()).toBe(400);
+  const body = (await response.json()) as { category?: string; error?: string; id?: string };
+  expect(body.category).toBe("invalid_input");
+  expect(body.error).toBe("Invalid scan target.");
+  expect(body.id).toBeUndefined();
 });
 
 test("waitlist and feedback accept synthetic submissions", async ({ request }) => {
   const waitlist = await request.post("/api/waitlist", { data: { email: syntheticEmail } });
   expect(waitlist.ok()).toBeTruthy();
 
+  const created = await request.post("/api/scan", { data: { target: "fixtures/repos/clean" } });
+  expect(created.ok()).toBeTruthy();
+  const { slug } = (await created.json()) as { slug: string };
+
   const feedback = await request.post("/api/feedback", {
-    data: { slug: syntheticSlug, helpful: true, note: "synthetic verification" },
+    data: { slug, helpful: true, note: "synthetic verification" },
   });
   expect(feedback.ok()).toBeTruthy();
 });

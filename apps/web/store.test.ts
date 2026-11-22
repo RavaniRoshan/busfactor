@@ -18,16 +18,7 @@ describe("store memory fallback", () => {
     expect(await store.rateLimits.consume(key, "2026-11-21", 2)).toBe(true);
   });
 
-  it("lists stored job rows for the operator dashboard", async () => {
-    const id = `job-${makeSlug()}`;
-    await store.jobs.set(id, { id, status: "complete", public: false });
-    const rows = await store.jobs.values();
-    expect(rows.some((row) => row.id === id)).toBe(true);
-  });
 
-  it("accumulates spend", async () => {
-    const before = (await store.spend.get()).usd;
-    const after = await store.spend.add(0.01);
-    expect(after.usd).toBeCloseTo(before + 0.01);
-  });
+
+
 });

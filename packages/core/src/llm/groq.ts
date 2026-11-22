@@ -1,4 +1,5 @@
-import type { LLMProvider, LLMRequest } from "./provider.js";
+import type { LLMProvider, LLMRequest, LLMUsage } from "./provider.js";
+import { emptyUsage } from "./provider.js";
 
 export interface GroqProviderOptions {
   apiKey: string;
@@ -11,14 +12,20 @@ const ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
 export class GroqProvider implements LLMProvider {
   readonly name = "groq";
+  readonly model: string;
   private readonly apiKey: string;
-  private readonly model: string;
   private readonly fetchImpl: typeof fetch;
+  private readonly usage: LLMUsage;
 
   constructor(options: GroqProviderOptions) {
     this.apiKey = options.apiKey;
     this.model = options.model ?? process.env.BUSFACTOR_GROQ_MODEL ?? DEFAULT_MODEL;
     this.fetchImpl = options.fetchImpl ?? fetch;
+    this.usage = emptyUsage(this.name, this.model);
+  }
+
+  getUsage(): LLMUsage {
+    return { ...this.usage };
   }
 
   async complete(request: LLMRequest): Promise<string> {
@@ -45,7 +52,11 @@ export class GroqProvider implements LLMProvider {
     }
     const json = (await response.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
     };
+    this.usage.requests += 1;
+    this.usage.inputTokens += json.usage?.prompt_tokens ?? 0;
+    this.usage.outputTokens += json.usage?.completion_tokens ?? 0;
     return json.choices?.[0]?.message?.content ?? "";
   }
 }

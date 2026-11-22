@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { store } from "@/lib/store";
 import { PageFrame } from "@/components/site-chrome";
 import { ReportWindow } from "@/components/report-window";
+import { ReportActions, ReportViewTracker } from "@/components/report-trackers";
 import { buttonVariants } from "@/components/ui/button";
 import { parseReportView, type Report } from "@/lib/report-view";
 import FeedbackWidget from "./FeedbackWidget";
@@ -26,25 +27,22 @@ export default async function ReportPage({
 
   const report = stored.report as Report;
   const view = parseReportView(rawView);
+  const reportMeta = (report as { meta?: { stack?: string; fileCount?: number; rubricVersion?: string } }).meta;
 
   return (
     <PageFrame>
+      <ReportViewTracker
+        slug={slug}
+        stack={reportMeta?.stack}
+        fileCount={reportMeta?.fileCount}
+        rubricVersion={reportMeta?.rubricVersion}
+      />
       <div className="py-lg">
         <ReportWindow report={report} slug={slug} view={view} />
       </div>
 
       <div className="mx-auto mt-xl grid w-full max-w-article gap-xl">
-        <section aria-label="Report downloads" className="flex flex-wrap gap-sm">
-          <a href={`/api/report/${slug}/download`} className={buttonVariants({ variant: "default" })}>
-            Download report
-          </a>
-          <a href={`/api/report/${slug}/fixes`} className={buttonVariants({ variant: "outline" })}>
-            Download fix list
-          </a>
-          <a href={`/badge/${slug}.svg`} className={buttonVariants({ variant: "outline" })}>
-            Badge
-          </a>
-        </section>
+        <ReportActions slug={slug} />
 
         <section aria-label="More actions" className="flex flex-wrap gap-sm">
           <a href="/scan" className={buttonVariants({ variant: "default" })}>

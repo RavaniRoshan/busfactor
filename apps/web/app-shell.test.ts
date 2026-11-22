@@ -78,13 +78,22 @@ describe("webapp shell", () => {
     expect(report).not.toMatch(/score\s*=\s*\d+/);
   });
 
-  it("keeps the operator dashboard answer-first and noindex", () => {
+  it("keeps the operator dashboard answer-first, noindex, and session-protected", () => {
     const page = readFileSync(path.join(root, "app/admin/metrics/page.tsx"), "utf8");
     expect(page).toContain("robots: { index: false, follow: false }");
-    for (const question of ["Is it working?", "Where does it fail?", "Is it helping?", "What should I do?"]) {
-      expect(page).toContain(question);
+    for (const label of [
+      "A. Business overview",
+      "B. Acquisition",
+      "C. Activation and engagement",
+      "D. Operational health",
+      "E. Revenue",
+      "F. Unit economics",
+    ]) {
+      expect(page).toContain(label);
     }
-    expect(page).toContain("store.jobs.values()");
+    expect(page).toContain("isAdminRequest");
+    expect(page).toContain('redirect("/admin/login")');
+    expect(page).not.toContain("BUSFACTOR_ADMIN_TOKEN");
   });
 
   it("allows eval only in the development CSP", () => {
@@ -102,6 +111,8 @@ describe("webapp shell", () => {
 
     expect(chrome).toContain('href: "/scan"');
     expect(chrome).toContain('href: "/docs"');
+    expect(chrome).toContain("NEXT_PUBLIC_MARKETING_URL");
+    expect(chrome).toContain("Website");
     expect(chrome).not.toContain('/#');
     expect(scan).toContain('href="/docs"');
     expect(docs).toContain('href="/scan"');

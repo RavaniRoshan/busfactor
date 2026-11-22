@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { LLMUsage } from "./llm/provider.js";
 
 export const DIMENSION_DEFINITIONS = [
   { id: "runnability", label: "Runnability", weight: 20 },
@@ -124,6 +125,8 @@ export interface SnapshotOptions {
   fileCap?: number;
   sizeCapBytes?: number;
   fetchImpl?: typeof fetch;
+  githubToken?: string;
+  timeoutMs?: number;
 }
 
 export const verdictSchema = z.enum([
@@ -146,14 +149,27 @@ export const dimensionScoreSchema = z
   .strict();
 export type DimensionScore = z.infer<typeof dimensionScoreSchema>;
 
+export const llmUsageSchema: z.ZodType<LLMUsage> = z
+  .object({
+    provider: z.string().min(1),
+    model: z.string(),
+    inputTokens: z.number().int().nonnegative(),
+    outputTokens: z.number().int().nonnegative(),
+    cachedTokens: z.number().int().nonnegative(),
+    requests: z.number().int().nonnegative(),
+  })
+  .strict();
+
 export const reportMetaSchema = z
   .object({
     engineVersion: z.string().min(1),
     rubricVersion: z.string().min(1),
+    promptVersion: z.string().min(1),
     sha: z.string().min(1),
     scannedAt: z.string().datetime(),
     durationMs: z.number().int().nonnegative(),
     costUsd: z.number().nonnegative(),
+    usage: llmUsageSchema,
     stack: stackSchema,
     fileCount: z.number().int().nonnegative(),
     totalBytes: z.number().int().nonnegative(),

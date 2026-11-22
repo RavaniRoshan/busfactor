@@ -3,6 +3,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "cn";
 
+const marketingUrl =
+  process.env.NEXT_PUBLIC_MARKETING_URL ?? "https://ravaniroshan.github.io/busfactor-landing-page/";
+
 const navItems: { label: string; href: string; primary?: boolean }[] = [
   { label: "Scan", href: "/scan", primary: true },
   { label: "Docs", href: "/docs" },
@@ -54,6 +57,13 @@ export function SiteFooter() {
               {item.label}
             </a>
           ))}
+          <a
+            href={marketingUrl}
+            rel="noreferrer"
+            className="rounded-corner-md px-md py-sm text-label-sm text-text-secondary outline-none hover:text-text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            Website
+          </a>
           <a href="/terms" className="rounded-corner-md px-md py-sm text-label-sm text-text-secondary outline-none hover:text-text-primary focus-visible:ring-3 focus-visible:ring-ring/50">
             Terms
           </a>

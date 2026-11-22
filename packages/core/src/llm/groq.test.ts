@@ -54,4 +54,37 @@ describe("GroqProvider", () => {
     if (previous === undefined) delete process.env.GROQ_API_KEY;
     else process.env.GROQ_API_KEY = previous;
   });
+
+  it("accumulates provider-reported token usage across calls", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({
+        choices: [{ message: { content: "{}" } }],
+        usage: { prompt_tokens: 120, completion_tokens: 30 },
+      })
+    );
+    const provider = new GroqProvider({ apiKey: "k", fetchImpl });
+    await provider.complete({ system: "s", user: "u" });
+    await provider.complete({ system: "s", user: "u" });
+    expect(provider.getUsage()).toEqual({
+      provider: "groq",
+      model: "openai/gpt-oss-20b",
+      inputTokens: 240,
+      outputTokens: 60,
+      cachedTokens: 0,
+      requests: 2,
+    });
+  });
+
+  it("increments requests and reports zero tokens when usage is missing", async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse({ choices: [{ message: { content: "{}" } }] }));
+    const provider = new GroqProvider({ apiKey: "k", fetchImpl });
+    await provider.complete({ system: "s", user: "u" });
+    expect(provider.getUsage()).toMatchObject({
+      provider: "groq",
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedTokens: 0,
+      requests: 1,
+    });
+  });
 });
