@@ -194,8 +194,7 @@ function createPostgresRecords(): Records {
       if (!normalized) return 0;
       await ensureSchema();
       const result = await getPool().query(
-        `UPDATE waitlist_entries SET status = 'deleted'
-         WHERE lower(email) = lower($1) AND status = 'active'`,
+        `DELETE FROM waitlist_entries WHERE lower(email) = lower($1)`,
         [normalized]
       );
       return result.rowCount ?? 0;
