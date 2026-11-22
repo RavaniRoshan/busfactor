@@ -7,63 +7,91 @@ const CONTACT = "ravaniroshansingh@gmail.com";
 export default function PrivacyPage() {
   return (
     <PageFrame>
-      <PageIntro eyebrow="Legal" title="Privacy" text="What BusFactor collects, why, and how to ask for removal." />
+      <PageIntro
+        eyebrow="Legal"
+        title="Privacy"
+        text="What BusFactor collects, why, and how to ask for removal."
+      />
       <div className="mx-auto mt-3xl max-w-article space-y-xl rounded-corner-lg border border-border-secondary bg-surface-secondary-bg p-xl md:p-2xl">
         <section>
           <h2 className="text-label font-medium text-text-primary">Who operates this service</h2>
           <p className="mt-sm text-label-sm text-text-secondary">
             BusFactor is operated by Roshan Ravani, an individual operator. Contact:{" "}
-            <a className="underline underline-offset-4" href={`mailto:${CONTACT}`}>{CONTACT}</a>.
+            <a className="underline underline-offset-4" href={`mailto:${CONTACT}`}>
+              {CONTACT}
+            </a>
+            .
           </p>
         </section>
 
         <section>
-          <h2 className="text-label font-medium text-text-primary">What is collected</h2>
+          <h2 className="text-label font-medium text-text-primary">Data inventory</h2>
           <ul className="mt-sm list-disc space-y-sm pl-lg text-label-sm text-text-secondary">
-            <li>The repository target you submit (a public GitHub URL or a local path).</li>
-            <li>Findings, scores, verdicts, OPERATE.md drafts and author questions derived from that target, stored in Neon Postgres as a report keyed by an unguessable slug.</li>
-            <li>A salted SHA-256 hash of the requesting IP address, truncated to 24 hex characters, used only for daily rate limiting. The raw address is not stored.</li>
-            <li>Waitlist email addresses and report feedback (slug, yes/no answer, optional note and timestamp), when those endpoints are used. These are held in a server-local JSON file, not in the browser.</li>
-            <li>A <code className="font-mono">theme</code> preference in your browser&apos;s local storage, set by the theme toggle.</li>
+            <li>
+              <strong className="font-medium text-text-primary">Repository snapshots:</strong> downloaded to a temporary
+              directory, never executed, deleted when the scan finishes (success or failure). Selected excerpts may be
+              sent to Groq when a key is configured.
+            </li>
+            <li>
+              <strong className="font-medium text-text-primary">Reports:</strong> stored in Neon with an unguessable
+              slug; retained until a removal request; <code className="font-mono">noindex</code> by default; published
+              only by explicit opt-in.
+            </li>
+            <li>
+              <strong className="font-medium text-text-primary">Feedback:</strong> stored in Neon (
+              <code className="font-mono">report_feedback</code>) with slug, yes/no, optional note, timestamp; retained
+              until removal.
+            </li>
+            <li>
+              <strong className="font-medium text-text-primary">Waitlist:</strong> stored in Neon (
+              <code className="font-mono">waitlist_entries</code>) with email, optional source/campaign, timestamp;
+              retained until removal; never displayed in the dashboard.
+            </li>
+            <li>
+              <strong className="font-medium text-text-primary">Rate limiting:</strong> salted, truncated SHA-256 of the
+              IP address in a daily counter; the raw IP is not stored; the latest daily counter per hashed address
+              remains in the rate-limit store.
+            </li>
+            <li>
+              <strong className="font-medium text-text-primary">Analytics:</strong> consent-gated PostHog events with
+              page path, device type, campaign attribution, and action names; never repository contents, URLs, local
+              paths, slugs, or secrets. Declining analytics initializes no PostHog tracking and sends no events.
+              Retention follows the PostHog project settings; requests can be sent to the contact address.
+            </li>
+            <li>
+              <strong className="font-medium text-text-primary">Admin sessions:</strong> HttpOnly cookie, 8 hours.
+            </li>
+            <li>
+              <strong className="font-medium text-text-primary">Billing:</strong> no accounts, payments, or
+              subscriptions in this build.
+            </li>
           </ul>
-        </section>
-
-        <section>
-          <h2 className="text-label font-medium text-text-primary">How repository content is handled</h2>
-          <p className="mt-sm text-label-sm text-text-secondary">
-            Repository code is never executed. Downloaded GitHub snapshots are written to a temporary directory and deleted when the scan finishes; only the derived findings and report are retained. When a live LLM key is configured, selected repository excerpts are sent to Groq for analysis.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-label font-medium text-text-primary">Analytics</h2>
-          <p className="mt-sm text-label-sm text-text-secondary">
-            If you accept the in-app analytics banner, BusFactor uses PostHog product analytics to understand which pages
-            and actions are useful. Analytics is consent-gated, does not use session recording or autocapture, and does
-            not send repository contents, repository URLs, local paths, report slugs, emails, secrets, or full reports.
-            Event details are documented in <code className="font-mono">docs/analytics.md</code>. Full retention
-            reconciliation across app, analytics, and legal records is handled by Task 10.
-          </p>
         </section>
 
         <section>
           <h2 className="text-label font-medium text-text-primary">Recipients</h2>
           <p className="mt-sm text-label-sm text-text-secondary">
-            Hosting is provided by Vercel, persistence by Neon Postgres, and (when enabled) language inference by Groq. BusFactor does not sell data or share reports with third parties. Third-party reports are <code className="font-mono">noindex</code> by default.
+            Hosting is provided by Vercel, persistence by Neon Postgres, and, when enabled, language inference by Groq.
+            Product analytics, when consented, is provided by PostHog. BusFactor does not sell data or share reports
+            with third parties.
           </p>
         </section>
 
         <section>
-          <h2 className="text-label font-medium text-text-primary">Retention and your rights</h2>
+          <h2 className="text-label font-medium text-text-primary">Your rights and removal</h2>
           <p className="mt-sm text-label-sm text-text-secondary">
-            Reports are retained until a removal request is received; there is no automatic deletion timer in the current build. You can ask for a report, waitlist entry or feedback record to be removed by emailing {CONTACT} with the report URL or the email used. We will confirm when it is gone. Data access and deletion requests are handled manually by the operator.
+            You can ask for a report, waitlist entry, feedback record, or analytics deletion request to be handled by
+            emailing {CONTACT} with the report URL, the email used, or enough detail to identify the record. Requests
+            are handled manually by the operator; we aim to handle removal requests within 24 hours and will confirm
+            when the requested record is gone. Data access and deletion requests are handled manually by the operator.
           </p>
         </section>
 
         <section>
           <h2 className="text-label font-medium text-text-primary">Jurisdiction</h2>
           <p className="mt-sm text-label-sm text-text-secondary">
-            Governing law and applicable privacy regime: [NEEDED — operator to specify before publication]. This page describes actual system behaviour; it is not a legal certification.
+            Governing law and applicable privacy regime: [NEEDED — operator to specify before publication]. This page
+            describes actual system behaviour; it is not a legal certification.
           </p>
         </section>
 

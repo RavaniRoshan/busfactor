@@ -111,6 +111,8 @@ describe("webapp shell", () => {
 
     expect(chrome).toContain('href: "/scan"');
     expect(chrome).toContain('href: "/docs"');
+    expect(chrome).toContain("NEXT_PUBLIC_MARKETING_URL");
+    expect(chrome).toContain("Website");
     expect(chrome).not.toContain('/#');
     expect(scan).toContain('href="/docs"');
     expect(docs).toContain('href="/scan"');
