@@ -69,6 +69,9 @@ interface ScanJobStore {
   costSummary(sinceDays: number): Promise<{ totalUsd: number; averageUsd: number; medianUsd: number }>;
 }
 
+// Duration percentile definitions (keep memory and Postgres metrics aligned):
+// - median: interpolated median (percentile_cont(0.5) in SQL)
+// - p95: nearest-rank p95 (percentile_disc(0.95) in SQL)
 function percentileNearestRank(sorted: number[], p: number): number | null {
   if (sorted.length === 0) return null;
   const index = Math.max(0, Math.ceil(p * sorted.length) - 1);
@@ -382,9 +385,11 @@ function createPostgresStore(): ScanJobStore {
            count(*) FILTER (WHERE status = 'failed')::int AS failed,
            count(*) FILTER (WHERE status = 'running')::int AS running,
            count(*) FILTER (WHERE status = 'complete' AND cache_hit = true)::int AS cache_hits,
+           -- Percentile definitions (keep aligned with computeJobMetrics):
+           -- median = interpolated median; p95 = nearest-rank p95.
            percentile_cont(0.5) WITHIN GROUP (ORDER BY duration_ms)
              FILTER (WHERE duration_ms IS NOT NULL) AS median_duration_ms,
-           percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms)
+           percentile_disc(0.95) WITHIN GROUP (ORDER BY duration_ms)
              FILTER (WHERE duration_ms IS NOT NULL) AS p95_duration_ms
          FROM scan_jobs
          WHERE created_at >= now() - ($1::text || ' days')::interval`,
