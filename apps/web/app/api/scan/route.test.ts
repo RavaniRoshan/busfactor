@@ -66,7 +66,7 @@ afterEach(() => {
 });
 
 describe("POST /api/scan cache-path failure handling", () => {
-  it("marks job failed with safe category when cache lookup throws after job creation", async () => {
+  it("returns safe 500 without creating a job when cache lookup throws before job creation", async () => {
     vi.mocked(store.reportCache.get).mockRejectedValue(new Error("cache backend exploded with secrets"));
 
     const request = new Request("http://localhost/api/scan", {
@@ -79,18 +79,15 @@ describe("POST /api/scan cache-path failure handling", () => {
     const body = (await response.json()) as { error?: string; category?: string };
 
     expect(response.status).toBe(500);
-    expect(scanJobs.create).toHaveBeenCalledTimes(1);
-    expect(scanJobs.fail).toHaveBeenCalledTimes(1);
-    expect(scanJobs.fail).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ errorCategory: "internal_error" })
-    );
+    expect(scanJobs.create).not.toHaveBeenCalled();
+    expect(scanJobs.fail).not.toHaveBeenCalled();
+    expect(spendStore.reserve).not.toHaveBeenCalled();
     expect(body.category).toBe("internal_error");
     expect(body.error).toBe("Internal scan error.");
     expect(body.error).not.toContain("secrets");
   });
 
-  it("returns 503 and fails job when spend reservation is refused", async () => {
+  it("returns 503 without creating a job when spend reservation is refused", async () => {
     vi.mocked(store.reportCache.get).mockResolvedValue(undefined);
     vi.mocked(spendStore.reserve).mockResolvedValueOnce({ ok: false, usd: 10 });
     const request = new Request("http://localhost/api/scan", {
@@ -104,16 +101,13 @@ describe("POST /api/scan cache-path failure handling", () => {
 
     expect(response.status).toBe(503);
     expect(body.error).toBe("daily spend cap reached");
-    expect(scanJobs.create).toHaveBeenCalledTimes(1);
-    expect(scanJobs.fail).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ errorCategory: "spend_cap" })
-    );
+    expect(scanJobs.create).not.toHaveBeenCalled();
+    expect(scanJobs.fail).not.toHaveBeenCalled();
     expect(scanTargetMock).not.toHaveBeenCalled();
     expect(spendStore.settle).not.toHaveBeenCalled();
   });
 
-  it("does not reserve spend on compatible cache hit", async () => {
+  it("creates/completes a job with cacheHit true on compatible cache hit without reserving spend", async () => {
     vi.mocked(store.reportCache.get).mockResolvedValue({
       slug: "cached-slug",
       report: { meta: { promptVersion: "0.1.0", usage: { provider: "h", model: "h", inputTokens: 0, outputTokens: 0, cachedTokens: 0, requests: 1 } } },
@@ -130,6 +124,11 @@ describe("POST /api/scan cache-path failure handling", () => {
 
     expect(response.status).toBe(200);
     expect(body.cached).toBe(true);
+    expect(scanJobs.create).toHaveBeenCalledTimes(1);
+    expect(scanJobs.complete).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ cacheHit: true, costUsd: 0, reportSlug: "cached-slug" })
+    );
     expect(spendStore.reserve).not.toHaveBeenCalled();
     expect(spendStore.settle).not.toHaveBeenCalled();
     expect(scanTargetMock).not.toHaveBeenCalled();

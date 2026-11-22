@@ -45,6 +45,7 @@ async function settleReservation(day: string, reserved: number, actual: number, 
 }
 
 export async function POST(request: Request) {
+  // 1. Kill switch, validation, rate limit.
   if (process.env.BUSFACTOR_KILL_SWITCH === "1") {
     return Response.json({ error: "scans are temporarily disabled" }, { status: 503 });
   }
@@ -60,6 +61,60 @@ export async function POST(request: Request) {
     return Response.json({ error: "rate limit exceeded" }, { status: 429 });
   }
 
+  // 2. Cache lookup (legacy compatibility guard included).
+  let cached: { report: unknown; slug: string } | undefined;
+  try {
+    cached = await store.reportCache.get(rawTarget);
+  } catch (error) {
+    // 8. Cache-lookup throw before job creation returns a safe 500 without a job.
+    const category = categorizeScanError(error);
+    return Response.json({ error: safeErrorMessage(category), category }, { status: 500 });
+  }
+
+  // 3. If cache hit: create a completed job with cacheHit true and return.
+  if (cached) {
+    const cachedMeta = (cached.report as { meta?: { promptVersion?: unknown; usage?: unknown } }).meta;
+    const isCompatibleCache =
+      cachedMeta?.promptVersion === PROMPT_VERSION && cachedMeta?.usage != null;
+    if (isCompatibleCache) {
+      const id = randomUUID();
+      await scanJobs.create({
+        id,
+        engineVersion: ENGINE_VERSION,
+        rubricVersion: RUBRIC_VERSION,
+        promptVersion: PROMPT_VERSION,
+      });
+      await scanJobs.complete(id, {
+        reportSlug: cached.slug,
+        durationMs: 0,
+        cacheHit: true,
+        costUsd: 0,
+        model: null,
+        engineVersion: ENGINE_VERSION,
+        rubricVersion: RUBRIC_VERSION,
+        promptVersion: PROMPT_VERSION,
+      });
+      return Response.json({
+        id,
+        status: "complete",
+        slug: cached.slug,
+        report: cached.report,
+        cached: true,
+      });
+    }
+    // Stale legacy cache entry: ignore and rescan; successful rescan overwrites it.
+  }
+
+  // 4. If cache miss: reserve daily spend. On refusal return 503 with a safe message and create no job.
+  const cap = spendCapUsd();
+  const reserveAmount = reservationUsd();
+  const day = utcDay();
+  const reservation = await spendStore.reserve(day, reserveAmount, cap);
+  if (!reservation.ok) {
+    return Response.json({ error: "daily spend cap reached" }, { status: 503 });
+  }
+
+  // 5. Only after a successful reservation, create the running job and scan.
   const id = randomUUID();
   const startedAt = Date.now();
   await scanJobs.create({
@@ -69,46 +124,7 @@ export async function POST(request: Request) {
     promptVersion: PROMPT_VERSION,
   });
 
-  const cap = spendCapUsd();
-  const reserveAmount = reservationUsd();
-  const day = utcDay();
-  let reserved = false;
-
   try {
-    const cached = await store.reportCache.get(rawTarget);
-    if (cached) {
-      const cachedMeta = (cached.report as { meta?: { promptVersion?: unknown; usage?: unknown } }).meta;
-      const isCompatibleCache =
-        cachedMeta?.promptVersion === PROMPT_VERSION && cachedMeta?.usage != null;
-      if (isCompatibleCache) {
-        await scanJobs.complete(id, {
-          reportSlug: cached.slug,
-          durationMs: 0,
-          cacheHit: true,
-          costUsd: 0,
-          model: null,
-          engineVersion: ENGINE_VERSION,
-          rubricVersion: RUBRIC_VERSION,
-          promptVersion: PROMPT_VERSION,
-        });
-        return Response.json({
-          id,
-          status: "complete",
-          slug: cached.slug,
-          report: cached.report,
-          cached: true,
-        });
-      }
-      // Stale legacy cache entry: ignore and rescan; successful rescan overwrites it.
-    }
-
-    const reservation = await spendStore.reserve(day, reserveAmount, cap);
-    if (!reservation.ok) {
-      await scanJobs.fail(id, { errorCategory: "spend_cap", durationMs: Date.now() - startedAt });
-      return Response.json({ error: "daily spend cap reached" }, { status: 503 });
-    }
-    reserved = true;
-
     const nodePath = await import("node:path");
     const target = /^https?:\/\//i.test(rawTarget)
       ? rawTarget
@@ -147,6 +163,7 @@ export async function POST(request: Request) {
         costUsd,
       });
     }
+    // 6. On success: record cost, complete the job, settle spend.
     await scanJobs.complete(id, {
       reportSlug: slug,
       durationMs: Date.now() - startedAt,
@@ -160,7 +177,9 @@ export async function POST(request: Request) {
     await settleReservation(day, reserveAmount, costUsd, cap);
     return Response.json({ id, status: "complete", slug, report });
   } catch (error) {
-    if (reserved) await settleReservation(day, reserveAmount, 0, cap);
+    // 7. On failure after job creation: fail the job with the safe category, settle spend with 0.
+    // 8. A throw after job creation is recorded as a failed job.
+    await settleReservation(day, reserveAmount, 0, cap);
     const category = categorizeScanError(error);
     await scanJobs.fail(id, { errorCategory: category, durationMs: Date.now() - startedAt });
     return Response.json({ error: safeErrorMessage(category), category }, { status: 500 });
