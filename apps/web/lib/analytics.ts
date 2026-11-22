@@ -28,6 +28,7 @@ export interface Attribution {
 const CONSENT_KEY = "busfactor.analytics.consent.v1";
 const ATTRIBUTION_KEY = "busfactor.attribution.v1";
 const SCAN_COMPLETED_KEY = "busfactor.scan.completed";
+export const ANALYTICS_READY_EVENT = "busfactor:analytics-ready";
 
 const FORBIDDEN_KEYS = new Set(["target", "repository", "repo", "path", "url", "slug"]);
 
@@ -135,32 +136,45 @@ export function initAnalytics(): void {
   const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || "https://us.i.posthog.com";
   const attribution = getAttribution();
 
-  posthog.init(key, {
-    api_host: apiHost,
-    autocapture: false,
-    capture_pageview: false,
-    disable_session_recording: true,
-    person_profiles: "identified_only",
-    persistence: "localStorage",
-  });
+  try {
+    posthog.init(key, {
+      api_host: apiHost,
+      autocapture: false,
+      capture_pageview: false,
+      disable_session_recording: true,
+      person_profiles: "identified_only",
+      persistence: "localStorage",
+    });
 
-  posthog.register({
-    surface: "product",
-    source: attribution.source,
-    medium: attribution.medium,
-    campaign: attribution.campaign,
-    content: attribution.content,
-    term: attribution.term,
-  });
+    posthog.register({
+      surface: "product",
+      source: attribution.source,
+      medium: attribution.medium,
+      campaign: attribution.campaign,
+      content: attribution.content,
+      term: attribution.term,
+    });
 
-  initialized = true;
+    initialized = true;
+    window.dispatchEvent(new Event(ANALYTICS_READY_EVENT));
+  } catch {
+    initialized = false;
+  }
 }
 
 export function capture(event: AnalyticsEvent, properties?: Record<string, unknown>): boolean {
   if (!isBrowser()) return false;
   if (!initialized) return false;
-  posthog.capture(event, sanitizeAnalyticsProperties(properties));
-  return true;
+  try {
+    posthog.capture(event, sanitizeAnalyticsProperties(properties));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function __resetAnalyticsForTests(): void {
+  initialized = false;
 }
 
 export function markScanCompleted(): void {

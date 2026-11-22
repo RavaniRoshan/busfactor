@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { bucketFileCount, capture, type AnalyticsEvent } from "@/lib/analytics";
+import { ANALYTICS_READY_EVENT, bucketFileCount, capture, type AnalyticsEvent } from "@/lib/analytics";
 import { buttonVariants } from "@/components/ui/button";
 import { TrackedLink } from "@/components/tracked-link";
 
@@ -19,17 +19,28 @@ export function ReportViewTracker({
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const key = `busfactor.analytics.report_viewed.${slug}`;
-    try {
-      if (window.sessionStorage.getItem(key) === "1") return;
-      window.sessionStorage.setItem(key, "1");
-    } catch {
-      return;
-    }
-    capture("report_viewed", {
-      file_count_bucket: typeof fileCount === "number" ? bucketFileCount(fileCount) : undefined,
-      stack: typeof stack === "string" ? stack : undefined,
-      rubric_version: typeof rubricVersion === "string" ? rubricVersion : undefined,
-    });
+    const tryCapture = () => {
+      try {
+        if (window.sessionStorage.getItem(key) === "1") return;
+      } catch {
+        return;
+      }
+      const sent = capture("report_viewed", {
+        file_count_bucket: typeof fileCount === "number" ? bucketFileCount(fileCount) : undefined,
+        stack: typeof stack === "string" ? stack : undefined,
+        rubric_version: typeof rubricVersion === "string" ? rubricVersion : undefined,
+      });
+      if (!sent) return;
+      try {
+        window.sessionStorage.setItem(key, "1");
+      } catch {
+        // ignore storage failures after successful capture
+      }
+    };
+
+    tryCapture();
+    window.addEventListener(ANALYTICS_READY_EVENT, tryCapture);
+    return () => window.removeEventListener(ANALYTICS_READY_EVENT, tryCapture);
   }, [fileCount, rubricVersion, slug, stack]);
   return null;
 }

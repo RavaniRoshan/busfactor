@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { getConsent, hasAnalyticsKey, initAnalytics, setConsent, type Consent } from "@/lib/analytics";
+import { ANALYTICS_READY_EVENT, capture, getConsent, hasAnalyticsKey, initAnalytics, setConsent, type Consent } from "@/lib/analytics";
 
 type ConsentState = Consent | null | "unknown";
 
@@ -64,19 +64,26 @@ function ConsentBanner({ onChoose }: { onChoose: (value: Consent) => void }) {
 
 export function ScanPageTracker() {
   React.useEffect(() => {
-    trackOncePerSession("scan_page_viewed", "busfactor.analytics.scan_page_viewed");
+    const key = "busfactor.analytics.scan_page_viewed";
+    const tryCapture = () => {
+      if (typeof window === "undefined") return;
+      try {
+        if (window.sessionStorage.getItem(key) === "1") return;
+      } catch {
+        return;
+      }
+      const sent = capture("scan_page_viewed");
+      if (!sent) return;
+      try {
+        window.sessionStorage.setItem(key, "1");
+      } catch {
+        // ignore storage failures after successful capture
+      }
+    };
+
+    tryCapture();
+    window.addEventListener(ANALYTICS_READY_EVENT, tryCapture);
+    return () => window.removeEventListener(ANALYTICS_READY_EVENT, tryCapture);
   }, []);
   return null;
-}
-
-function trackOncePerSession(event: "scan_page_viewed", key: string) {
-  if (typeof window === "undefined") return;
-  try {
-    if (window.sessionStorage.getItem(key) === "1") return;
-    window.sessionStorage.setItem(key, "1");
-  } catch {
-    // If sessionStorage is unavailable, avoid noisy duplicates by not emitting.
-    return;
-  }
-  void import("@/lib/analytics").then(({ capture }) => capture(event));
 }
