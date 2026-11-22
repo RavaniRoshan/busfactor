@@ -17,16 +17,10 @@ interface RateLimitStore extends KV<{ day: string; count: number }> {
   consume(key: string, day: string, max: number): Promise<boolean>;
 }
 
-interface SpendStore {
-  get(): Promise<{ usd: number }>;
-  add(usd: number): Promise<{ usd: number }>;
-}
-
 export interface Store {
   reports: KV<StoredReport>;
   reportCache: KV<{ report: unknown; slug: string }>;
   rateLimits: RateLimitStore;
-  spend: SpendStore;
 }
 
 type GlobalStore = typeof globalThis & {
@@ -57,7 +51,6 @@ function createMemoryStore(): Store {
   const reports = new Map<string, StoredReport>();
   const reportCache = new Map<string, { report: unknown; slug: string }>();
   const rateLimits = new Map<string, { day: string; count: number }>();
-  const spend = { usd: 0 };
 
   const store: Store = {
     reports: memoryKV(reports),
@@ -73,15 +66,6 @@ function createMemoryStore(): Store {
         if (current.count >= max) return false;
         current.count += 1;
         return true;
-      },
-    },
-    spend: {
-      async get() {
-        return { usd: spend.usd };
-      },
-      async add(usd) {
-        spend.usd += usd;
-        return { usd: spend.usd };
       },
     },
   };
@@ -146,28 +130,6 @@ function createPostgresStore(): Store {
           [key, value, day]
         );
         return Number(result.rows[0]?.count ?? 0) <= max;
-      },
-    },
-    spend: {
-      async get() {
-        await ensureSchema();
-        const result = await getPool().query(
-          `SELECT value FROM busfactor_store WHERE namespace = 'meta' AND key = 'spend'`
-        );
-        return { usd: Number(result.rows[0]?.value?.usd ?? 0) };
-      },
-      async add(usd) {
-        await ensureSchema();
-        const result = await getPool().query(
-          `INSERT INTO busfactor_store (namespace, key, value) VALUES ('meta', 'spend', $1::jsonb)
-           ON CONFLICT (namespace, key) DO UPDATE SET
-             value = jsonb_set(COALESCE(busfactor_store.value, '{"usd":0}'::jsonb), '{usd}',
-               to_jsonb(COALESCE((busfactor_store.value->>'usd')::numeric, 0) + $2::numeric)),
-             updated_at = now()
-           RETURNING value`,
-          [JSON.stringify({ usd }), usd]
-        );
-        return { usd: Number(result.rows[0]?.value?.usd ?? 0) };
       },
     },
   };

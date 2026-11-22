@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { hashIp } from "@/lib/ip";
 import { categorizeScanError, safeErrorMessage, scanJobs } from "@/lib/scan-jobs";
+import { spendStore, utcDay } from "@/lib/spend";
 import { makeSlug, store } from "@/lib/store";
 
 export const maxDuration = 60;
@@ -14,8 +15,33 @@ function clientIp(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
 }
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
+function spendCapUsd(): number {
+  const raw = Number(process.env.BUSFACTOR_DAILY_SPEND_CAP_USD ?? "10");
+  return Number.isFinite(raw) && raw >= 0 ? raw : 10;
+}
+
+function reservationUsd(): number {
+  const raw = Number(process.env.BUSFACTOR_SCAN_RESERVATION_USD ?? "0.05");
+  return Number.isFinite(raw) && raw >= 0 ? raw : 0.05;
+}
+
+function maybeAlertSpend(day: string, usd: number, cap: number): void {
+  const url = process.env.BUSFACTOR_ALERT_WEBHOOK_URL?.trim();
+  if (!url || cap <= 0 || usd < cap * 0.8) return;
+  void fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ type: "spend_warning", day, usd, cap }),
+  }).catch(() => undefined);
+}
+
+async function settleReservation(day: string, reserved: number, actual: number, cap: number): Promise<void> {
+  try {
+    const settled = await spendStore.settle(day, reserved, actual);
+    maybeAlertSpend(day, settled.usd, cap);
+  } catch {
+    // Best-effort: settlement failure must not change scan response.
+  }
 }
 
 export async function POST(request: Request) {
@@ -29,15 +55,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "target is required" }, { status: 400 });
   }
 
-  const allowed = await store.rateLimits.consume(hashIp(clientIp(request)), today(), 10);
+  const allowed = await store.rateLimits.consume(hashIp(clientIp(request)), utcDay(), 10);
   if (!allowed) {
     return Response.json({ error: "rate limit exceeded" }, { status: 429 });
-  }
-
-  const spendCap = Number(process.env.BUSFACTOR_DAILY_SPEND_CAP_USD ?? "10");
-  const currentSpend = await store.spend.get();
-  if (currentSpend.usd >= spendCap) {
-    return Response.json({ error: "daily spend cap reached" }, { status: 503 });
   }
 
   const id = randomUUID();
@@ -48,6 +68,11 @@ export async function POST(request: Request) {
     rubricVersion: RUBRIC_VERSION,
     promptVersion: PROMPT_VERSION,
   });
+
+  const cap = spendCapUsd();
+  const reserveAmount = reservationUsd();
+  const day = utcDay();
+  let reserved = false;
 
   try {
     const cached = await store.reportCache.get(rawTarget);
@@ -77,6 +102,13 @@ export async function POST(request: Request) {
       // Stale legacy cache entry: ignore and rescan; successful rescan overwrites it.
     }
 
+    const reservation = await spendStore.reserve(day, reserveAmount, cap);
+    if (!reservation.ok) {
+      await scanJobs.fail(id, { errorCategory: "spend_cap", durationMs: Date.now() - startedAt });
+      return Response.json({ error: "daily spend cap reached" }, { status: 503 });
+    }
+    reserved = true;
+
     const nodePath = await import("node:path");
     const target = /^https?:\/\//i.test(rawTarget)
       ? rawTarget
@@ -102,7 +134,6 @@ export async function POST(request: Request) {
       };
     }).meta;
     const costUsd = Number(meta?.costUsd ?? 0);
-    await store.spend.add(costUsd);
     const usage = meta?.usage;
     if (usage) {
       await scanJobs.recordCost({
@@ -126,8 +157,10 @@ export async function POST(request: Request) {
       rubricVersion: RUBRIC_VERSION,
       promptVersion: meta?.promptVersion ?? PROMPT_VERSION,
     });
+    await settleReservation(day, reserveAmount, costUsd, cap);
     return Response.json({ id, status: "complete", slug, report });
   } catch (error) {
+    if (reserved) await settleReservation(day, reserveAmount, 0, cap);
     const category = categorizeScanError(error);
     await scanJobs.fail(id, { errorCategory: category, durationMs: Date.now() - startedAt });
     return Response.json({ error: safeErrorMessage(category), category }, { status: 500 });

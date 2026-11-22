@@ -97,6 +97,12 @@ export async function ensureSchema(): Promise<void> {
         CREATE INDEX IF NOT EXISTS scan_costs_scan_id_idx ON scan_costs (scan_id);
         CREATE INDEX IF NOT EXISTS scan_costs_created_at_idx ON scan_costs (created_at DESC);`
       );
+      await p.query(
+        `CREATE TABLE IF NOT EXISTS daily_spend (
+          day date PRIMARY KEY,
+          usd numeric(12,6) NOT NULL DEFAULT 0
+        );`
+      );
     })();
   }
   return ready;

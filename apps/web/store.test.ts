@@ -20,9 +20,5 @@ describe("store memory fallback", () => {
 
 
 
-  it("accumulates spend", async () => {
-    const before = (await store.spend.get()).usd;
-    const after = await store.spend.add(0.01);
-    expect(after.usd).toBeCloseTo(before + 0.01);
-  });
+
 });
