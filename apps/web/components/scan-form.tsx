@@ -10,6 +10,7 @@ export function ScanForm() {
   const [jobId, setJobId] = React.useState("");
   const [status, setStatus] = React.useState("");
   const [error, setError] = React.useState("");
+  const [cached, setCached] = React.useState(false);
   const [startedAt, setStartedAt] = React.useState<number | null>(null);
   const [elapsedMs, setElapsedMs] = React.useState(0);
 
@@ -22,6 +23,7 @@ export function ScanForm() {
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setCached(false);
     setStatus("running");
     setElapsedMs(0);
     setStartedAt(Date.now());
@@ -31,24 +33,48 @@ export function ScanForm() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ target }),
       });
+      const body = (await response.json().catch(() => ({}))) as {
+        id?: string;
+        status?: string;
+        slug?: string;
+        cached?: boolean;
+        error?: string;
+      };
       if (!response.ok) {
-        setError(await response.text());
+        setError(typeof body.error === "string" && body.error ? body.error : "Scan failed.");
         setStatus("");
         setStartedAt(null);
         return;
       }
-      const created = (await response.json()) as { id: string };
-      setJobId(created.id);
+
+      const createdId = typeof body.id === "string" ? body.id : "";
+      setJobId(createdId);
+      if (body.cached === true) setCached(true);
+      if (body.status === "complete" && typeof body.slug === "string") {
+        setStatus("complete");
+        window.location.href = `/r/${body.slug}`;
+        return;
+      }
+
       const poll = async () => {
-        const statusResponse = await fetch(`/api/scan/${created.id}`);
-        const current = (await statusResponse.json()) as { status: string; error?: string; slug?: string };
-        setStatus(current.status);
-        if (current.status === "running") setTimeout(poll, 500);
-        if (current.status === "complete" && current.slug) {
-          window.location.href = `/r/${current.slug}`;
+        const statusResponse = await fetch(`/api/scan/${createdId}`);
+        const current = (await statusResponse.json().catch(() => ({}))) as {
+          status?: string;
+          error?: string;
+          slug?: string;
+        };
+        const currentStatus = typeof current.status === "string" ? current.status : "";
+        setStatus(currentStatus);
+        if (currentStatus === "running") {
+          setTimeout(poll, 500);
+          return;
         }
-        if (current.status === "failed") {
-          setError(current.error ?? "scan failed");
+        if (currentStatus === "complete" && typeof current.slug === "string") {
+          window.location.href = `/r/${current.slug}`;
+          return;
+        }
+        if (currentStatus === "failed") {
+          setError(typeof current.error === "string" && current.error ? current.error : "Scan failed.");
           setStartedAt(null);
         }
       };
@@ -72,18 +98,21 @@ export function ScanForm() {
           id="scan-target"
           value={target}
           onChange={(event) => setTarget(event.target.value)}
-          placeholder="https://github.com/owner/repo or local path"
+          placeholder="https://github.com/owner/repo"
           autoComplete="off"
           required
           disabled={busy}
           className="h-10 w-full rounded-corner-md border border-border-primary bg-surface-bg px-lg font-mono text-label-sm text-text-primary outline-none placeholder:font-sans placeholder:text-text-tertiary focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-60"
         />
-        <p className="text-label-sm text-text-secondary">Public GitHub URLs and local paths. Nothing is executed, and no signup is required.</p>
-        <div>
+        <p className="text-label-sm text-text-secondary">
+          Public GitHub repositories only. For local folders, use the CLI. Nothing is executed.
+        </p>
+        <div className="flex flex-wrap items-center gap-md">
           <Button type="submit" disabled={busy}>
             {busy ? <ScanningSpinner /> : null}
             {busy ? "Scanning…" : "Scan repository"}
           </Button>
+          {cached && <Badge variant="secondary">Cached result</Badge>}
         </div>
       </form>
       {busy && <ScanProgress elapsedMs={elapsedMs} status={status} />}

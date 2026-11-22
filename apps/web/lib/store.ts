@@ -19,7 +19,7 @@ interface RateLimitStore extends KV<{ day: string; count: number }> {
 
 export interface Store {
   reports: KV<StoredReport>;
-  reportCache: KV<{ report: unknown; slug: string }>;
+  reportCache: KV<{ report: unknown; slug: string; createdAt?: number }>;
   rateLimits: RateLimitStore;
 }
 
@@ -49,7 +49,7 @@ function createMemoryStore(): Store {
   if (globalStore.__busfactorStore) return globalStore.__busfactorStore;
 
   const reports = new Map<string, StoredReport>();
-  const reportCache = new Map<string, { report: unknown; slug: string }>();
+  const reportCache = new Map<string, { report: unknown; slug: string; createdAt?: number }>();
   const rateLimits = new Map<string, { day: string; count: number }>();
 
   const store: Store = {
@@ -113,7 +113,7 @@ function pgKV<T>(namespace: string): KV<T> {
 function createPostgresStore(): Store {
   return {
     reports: pgKV<StoredReport>("reports"),
-    reportCache: pgKV<{ report: unknown; slug: string }>("report_cache"),
+    reportCache: pgKV<{ report: unknown; slug: string; createdAt?: number }>("report_cache"),
     rateLimits: {
       ...pgKV<{ day: string; count: number }>("rate_limits"),
       async consume(key, day, max) {

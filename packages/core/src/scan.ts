@@ -84,7 +84,10 @@ export async function scanSnapshot(snapshot: Snapshot, options: ScanOptions = {}
 
 export async function scanTarget(target: string, options: ScanOptions = {}): Promise<{ snapshot: Snapshot; report: Report }> {
   const snapshot = await createSnapshot(target, options);
-  const report = await scanSnapshot(snapshot, options);
-  await snapshot.dispose?.();
-  return { snapshot, report };
+  try {
+    const report = await scanSnapshot(snapshot, options);
+    return { snapshot, report };
+  } finally {
+    await snapshot.dispose?.();
+  }
 }

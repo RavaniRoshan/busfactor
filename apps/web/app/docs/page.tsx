@@ -12,13 +12,13 @@ const sections = [
   {
     id: "quickstart",
     title: "Quickstart",
-    body: "Scan a folder on your machine or a public GitHub repository. No account, no signup.",
+    body: "Scan a public GitHub repository in the hosted scanner, or scan a local folder with the CLI. No account, no signup.",
     command: "npx busfactor scan ./my-repo",
   },
   {
     id: "cli",
     title: "CLI",
-    body: "Export Markdown or JSON, and fail CI when operability drops below a threshold.",
+    body: "Export Markdown or JSON, and fail CI when operability drops below a threshold. When published, the CLI will be available as `npx busfactor`; until then, run it from the repository.",
     command: "busfactor scan <path|url> --out <dir> --format md,json --fail-under <score>",
   },
 ];
@@ -72,7 +72,7 @@ export default function DocsPage() {
         </section>
         <section id="limits" aria-labelledby="limits-title" className="scroll-mt-xl rounded-corner-lg border border-border-secondary bg-surface-secondary-bg p-xl">
           <h2 id="limits-title" className="text-label font-medium text-text-primary">Limits</h2>
-          <p className="mt-sm text-label-sm text-text-secondary">5,000 files or 25 MB per scan. Public GitHub URLs and local paths. No repository code is executed.</p>
+          <p className="mt-sm text-label-sm text-text-secondary">5,000 files or 25 MB per scan. The hosted scanner accepts public GitHub URLs only; local paths are for <code className="font-mono">npx busfactor scan ./my-repo</code>. No repository code is executed.</p>
         </section>
         <section id="privacy" aria-labelledby="privacy-title" className="scroll-mt-xl rounded-corner-lg border border-border-secondary bg-surface-secondary-bg p-xl">
           <h2 id="privacy-title" className="text-label font-medium text-text-primary">Privacy</h2>

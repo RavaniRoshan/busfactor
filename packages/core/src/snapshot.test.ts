@@ -8,6 +8,8 @@ import {
   SnapshotError,
   createSnapshotFromGitHub,
   createSnapshotFromLocal,
+  parseGitHubUrl,
+  resolveGitHubRepo,
 } from "./snapshot.js";
 
 const tempDirs: string[] = [];
@@ -79,6 +81,13 @@ describe("snapshot ingestion", () => {
     expect(snapshot.limitedAnalysis).toBe(true);
   });
 
+  it("rejects non-GitHub and internal hosts", () => {
+    expect(() => parseGitHubUrl("https://github.com.evil.com/a/b")).toThrow();
+    expect(() => parseGitHubUrl("http://169.254.169.254/a/b")).toThrow();
+    expect(() => parseGitHubUrl("file:///etc/passwd")).toThrow();
+    expect(() => parseGitHubUrl("https://github.com/owner")).toThrow();
+  });
+
   it("ingests a mocked GitHub repository and pins its SHA", async () => {
     const repoRoot = makeTempDir("busfactor-github-repo-");
     mkdirSync(path.join(repoRoot, "src"), { recursive: true });
@@ -86,28 +95,23 @@ describe("snapshot ingestion", () => {
     writeFileSync(path.join(repoRoot, "src", "index.ts"), "export const github = true;\n");
 
     const sha = "0123456789abcdef0123456789abcdef01234567";
-    const parent = path.dirname(repoRoot);
-    const archiveName = "owner-repo-0123456789abcdef0123456789abcdef01234567";
-    const tarballDir = makeTempDir("busfactor-tarball-");
-    const tarballPath = path.join(tarballDir, "repo.tar.gz");
-    await tar.c({ gzip: true, file: tarballPath, cwd: parent }, [path.basename(repoRoot)]);
-    // Rename the extracted top-level directory by archiving under the expected GitHub name.
     const githubParent = makeTempDir("busfactor-github-parent-");
+    const archiveName = `owner-repo-${sha}`;
     const githubRoot = path.join(githubParent, archiveName);
-    mkdirSync(githubRoot, { recursive: true });
-    writeFileSync(path.join(githubRoot, "package.json"), JSON.stringify({ name: "github-demo" }));
     mkdirSync(path.join(githubRoot, "src"), { recursive: true });
+    writeFileSync(path.join(githubRoot, "package.json"), JSON.stringify({ name: "github-demo" }));
     writeFileSync(path.join(githubRoot, "src", "index.ts"), "export const github = true;\n");
+    const tarballDir = makeTempDir("busfactor-tarball-");
     const githubTarball = path.join(tarballDir, "github.tar.gz");
     await tar.c({ gzip: true, file: githubTarball, cwd: githubParent }, [archiveName]);
-    const tarballBuffer = (await import("node:fs/promises")).readFile(githubTarball);
+    const tarballBuffer = await (await import("node:fs/promises")).readFile(githubTarball);
 
     const fetchMock = vi.fn(async (input: Parameters<typeof fetch>[0]) => {
       const url = String(input);
       if (url.includes("/commits")) {
         return new Response(JSON.stringify({ sha }), { status: 200 });
       }
-      return new Response(await tarballBuffer, { status: 200 });
+      return new Response(tarballBuffer, { status: 200 });
     });
 
     const snapshot = await createSnapshotFromGitHub("https://github.com/owner/repo", {
@@ -117,6 +121,53 @@ describe("snapshot ingestion", () => {
     expect(snapshot.source).toBe("github");
     expect(snapshot.sha).toBe(sha);
     expect(snapshot.files.map((file) => file.path)).toContain("src/index.ts");
+    await snapshot.dispose?.();
+  });
+
+  it("uses redirect:error, timeout, and optional auth for GitHub fetches", async () => {
+    const sha = "0123456789abcdef0123456789abcdef01234567";
+    const githubParent = makeTempDir("busfactor-github-parent-");
+    const archiveName = `owner-repo-${sha}`;
+    const githubRoot = path.join(githubParent, archiveName);
+    mkdirSync(path.join(githubRoot, "src"), { recursive: true });
+    writeFileSync(path.join(githubRoot, "package.json"), JSON.stringify({ name: "github-demo" }));
+    writeFileSync(path.join(githubRoot, "src", "index.ts"), "export const github = true;\n");
+    const tarballDir = makeTempDir("busfactor-tarball-");
+    const githubTarball = path.join(tarballDir, "github.tar.gz");
+    await tar.c({ gzip: true, file: githubTarball, cwd: githubParent }, [archiveName]);
+    const tarballBuffer = await (await import("node:fs/promises")).readFile(githubTarball);
+
+    const fetchMock = vi.fn(async (_input: Parameters<typeof fetch>[0], _init?: RequestInit) => {
+      const url = String(_input);
+      if (url.includes("/commits")) {
+        return new Response(JSON.stringify({ sha }), { status: 200 });
+      }
+      return new Response(tarballBuffer, { status: 200 });
+    });
+
+    await resolveGitHubRepo("https://github.com/Owner/Repo", {
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      githubToken: "test-token",
+    });
+
+    const commitCall = fetchMock.mock.calls[0];
+    expect(commitCall).toBeDefined();
+    const commitInit = commitCall?.[1] as RequestInit | undefined;
+    expect(commitInit?.redirect).toBe("error");
+    expect(commitInit?.signal).toBeDefined();
+    const headers = new Headers(commitInit?.headers);
+    expect(headers.get("authorization")).toBe("Bearer test-token");
+
+    const snapshot = await createSnapshotFromGitHub("https://github.com/owner/repo", {
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      sha,
+      githubToken: "test-token",
+    });
+    const tarballCall = fetchMock.mock.calls.find((call) => String(call[0]).includes("codeload.github.com"));
+    expect(tarballCall).toBeDefined();
+    const tarballInit = tarballCall?.[1] as RequestInit | undefined;
+    expect(tarballInit?.redirect).toBe("error");
+    expect(tarballInit?.signal).toBeDefined();
     await snapshot.dispose?.();
   });
 });

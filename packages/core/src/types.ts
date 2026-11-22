@@ -125,6 +125,8 @@ export interface SnapshotOptions {
   fileCap?: number;
   sizeCapBytes?: number;
   fetchImpl?: typeof fetch;
+  githubToken?: string;
+  timeoutMs?: number;
 }
 
 export const verdictSchema = z.enum([

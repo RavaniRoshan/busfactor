@@ -28,6 +28,7 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       BUSFACTOR_ADMIN_TOKEN: "audit-test-token",
+      BUSFACTOR_ALLOW_LOCAL_TARGETS: "1",
     },
   },
 });

@@ -76,6 +76,15 @@ test("API gates reject invalid input and protect admin metrics", async ({ reques
   expect(await authenticated.text()).toContain("BusFactor operations");
 });
 
+test("scan rejects malicious URLs with safe category and no completed job leak", async ({ request }) => {
+  const response = await request.post("/api/scan", { data: { target: "https://169.254.169.254/a/b" } });
+  expect(response.status()).toBe(400);
+  const body = (await response.json()) as { category?: string; error?: string; id?: string };
+  expect(body.category).toBe("invalid_input");
+  expect(body.error).toBe("Invalid scan target.");
+  expect(body.id).toBeUndefined();
+});
+
 test("waitlist and feedback accept synthetic submissions", async ({ request }) => {
   const waitlist = await request.post("/api/waitlist", { data: { email: syntheticEmail } });
   expect(waitlist.ok()).toBeTruthy();

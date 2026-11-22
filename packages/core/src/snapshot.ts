@@ -59,15 +59,31 @@ export interface ParsedGitHubUrl {
   ref?: string;
 }
 
+export interface ResolvedGitHubRepo {
+  owner: string;
+  repo: string;
+  sha: string;
+  canonicalUrl: string;
+}
+
+const GITHUB_NAME_RE = /^[A-Za-z0-9_.-]{1,100}$/;
+
+function isValidGitHubName(name: string): boolean {
+  return GITHUB_NAME_RE.test(name) && name !== "." && name !== "..";
+}
+
 export function parseGitHubUrl(input: string): ParsedGitHubUrl {
   let url: URL;
   try {
     url = new URL(input);
   } catch {
-    throw new SnapshotError("invalid_url", `Not a valid URL: ${input}`);
+    throw new SnapshotError("invalid_url", "Invalid repository URL");
   }
-  if (url.hostname !== "github.com") {
-    throw new SnapshotError("invalid_host", "Only github.com URLs are supported");
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new SnapshotError("invalid_url", "Only public GitHub URLs are supported");
+  }
+  if (url.hostname.toLowerCase() !== "github.com") {
+    throw new SnapshotError("invalid_host", "Only public GitHub URLs are supported");
   }
   const parts = url.pathname.split("/").filter(Boolean);
   if (parts.length < 2) {
@@ -79,9 +95,13 @@ export function parseGitHubUrl(input: string): ParsedGitHubUrl {
     throw new SnapshotError("invalid_repo", "GitHub URL must include owner and repository");
   }
   const repo = repoRaw.replace(/\.git$/, "");
+  if (!isValidGitHubName(owner) || !isValidGitHubName(repo)) {
+    throw new SnapshotError("invalid_repo", "Invalid GitHub repository name");
+  }
   const parsed: ParsedGitHubUrl = { owner, repo };
   if (parts[2] === "tree" && parts[3] !== undefined) {
-    parsed.ref = parts.slice(3).join("/");
+    const ref = parts.slice(3).join("/");
+    if (ref.length > 0) parsed.ref = ref;
   }
   return parsed;
 }
@@ -280,26 +300,46 @@ export async function createSnapshotFromLocal(
   return snapshot;
 }
 
-export async function createSnapshotFromGitHub(
+const DEFAULT_GITHUB_TIMEOUT_MS = 20_000;
+
+function githubHeaders(token?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "BusFactor",
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+function githubFetchOptions(options: SnapshotOptions, token?: string): RequestInit {
+  return {
+    headers: githubHeaders(token),
+    redirect: "error",
+    signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_GITHUB_TIMEOUT_MS),
+  };
+}
+
+export async function resolveGitHubRepo(
   input: string,
   options: SnapshotOptions = {},
-): Promise<Snapshot> {
+): Promise<ResolvedGitHubRepo> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const parsed = parseGitHubUrl(input);
-  const fileCap = options.fileCap ?? DEFAULT_FILE_CAP;
-  const sizeCapBytes = options.sizeCapBytes ?? DEFAULT_SIZE_CAP_BYTES;
+  const token = options.githubToken ?? process.env.GITHUB_TOKEN;
 
-  const commitResponse = await fetchImpl(
-    `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/commits${
-      parsed.ref ? `/${encodeURIComponent(parsed.ref)}` : ""
-    }`,
-    { headers: { Accept: "application/vnd.github+json", "User-Agent": "BusFactor" } },
-  );
+  const commitUrl = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/commits${
+    parsed.ref ? `/${encodeURIComponent(parsed.ref)}` : ""
+  }`;
+  let commitResponse: Response;
+  try {
+    commitResponse = await fetchImpl(commitUrl, githubFetchOptions(options, token));
+  } catch {
+    throw new SnapshotError("github_commit_lookup_failed", "Could not resolve repository commit");
+  }
   if (!commitResponse.ok) {
-    throw new SnapshotError(
-      "github_commit_lookup_failed",
-      `Could not resolve a commit for ${parsed.owner}/${parsed.repo}: ${commitResponse.status}`,
-    );
+    throw new SnapshotError("github_commit_lookup_failed", "Could not resolve repository commit");
   }
   const commitJson = (await commitResponse.json()) as { sha?: string } | Array<{ sha?: string }>;
   const sha = Array.isArray(commitJson) ? commitJson[0]?.sha : commitJson.sha;
@@ -307,60 +347,106 @@ export async function createSnapshotFromGitHub(
     throw new SnapshotError("github_sha_missing", "GitHub did not return a commit SHA");
   }
 
-  const tarballResponse = await fetchImpl(
-    `https://codeload.github.com/${parsed.owner}/${parsed.repo}/tar.gz/${sha}`,
-    { headers: { "User-Agent": "BusFactor" } },
-  );
-  if (!tarballResponse.ok) {
-    throw new SnapshotError(
-      "github_tarball_failed",
-      `Could not download the repository tarball: ${tarballResponse.status}`,
+  return {
+    owner: parsed.owner.toLowerCase(),
+    repo: parsed.repo.toLowerCase(),
+    sha: sha.toLowerCase(),
+    canonicalUrl: `https://github.com/${parsed.owner.toLowerCase()}/${parsed.repo.toLowerCase()}`,
+  };
+}
+
+export async function createSnapshotFromGitHub(
+  input: string,
+  options: SnapshotOptions & { sha?: string } = {},
+): Promise<Snapshot> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const fileCap = options.fileCap ?? DEFAULT_FILE_CAP;
+  const sizeCapBytes = options.sizeCapBytes ?? DEFAULT_SIZE_CAP_BYTES;
+  const token = options.githubToken ?? process.env.GITHUB_TOKEN;
+
+  const parsed = parseGitHubUrl(input);
+  const sha =
+    typeof options.sha === "string" && /^[0-9a-f]{40}$/i.test(options.sha)
+      ? options.sha.toLowerCase()
+      : (await resolveGitHubRepo(input, options)).sha;
+
+  let tarballResponse: Response;
+  try {
+    tarballResponse = await fetchImpl(
+      `https://codeload.github.com/${parsed.owner}/${parsed.repo}/tar.gz/${sha}`,
+      githubFetchOptions(options, token),
     );
+  } catch {
+    throw new SnapshotError("github_tarball_failed", "Could not download repository archive");
+  }
+  if (!tarballResponse.ok) {
+    throw new SnapshotError("github_tarball_failed", "Could not download repository archive");
+  }
+
+  const contentLength = tarballResponse.headers.get("content-length");
+  if (contentLength !== null) {
+    const length = Number(contentLength);
+    if (Number.isFinite(length) && length > sizeCapBytes) {
+      throw new SnapshotError("size_cap_exceeded", `Repository exceeds the ${sizeCapBytes}-byte size cap`);
+    }
   }
 
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "busfactor-github-"));
   const tarballPath = path.join(tempRoot, "repo.tar.gz");
   const extractDir = path.join(tempRoot, "extracted");
   await mkdir(extractDir);
-  await writeFile(tarballPath, Buffer.from(await tarballResponse.arrayBuffer()));
 
-  let totalExtractedBytes = 0;
-  await tar.x({
-    file: tarballPath,
-    cwd: extractDir,
-    filter: (entryPath: string, entry: { type?: string; size?: number }) => {
-      if (entryPath.includes("..") || path.isAbsolute(entryPath)) return false;
-      if (entry.type === "SymbolicLink" || entry.type === "Link") return false;
-      if (typeof entry.size === "number") {
-        totalExtractedBytes += entry.size;
-        if (totalExtractedBytes > sizeCapBytes) return false;
-      }
-      return true;
-    },
-  });
+  try {
+    const tarballBytes = Buffer.from(await tarballResponse.arrayBuffer());
+    if (tarballBytes.byteLength > sizeCapBytes) {
+      throw new SnapshotError("size_cap_exceeded", `Repository exceeds the ${sizeCapBytes}-byte size cap`);
+    }
+    await writeFile(tarballPath, tarballBytes);
 
-  const extractedEntries = await readdir(extractDir, { withFileTypes: true });
-  const root =
-    extractedEntries.length === 1 && extractedEntries[0]?.isDirectory()
-      ? path.join(extractDir, extractedEntries[0].name)
-      : extractDir;
+    let totalExtractedBytes = 0;
+    await tar.x({
+      file: tarballPath,
+      cwd: extractDir,
+      filter: (entryPath: string, entry: { type?: string; size?: number }) => {
+        if (entryPath.includes("..") || path.isAbsolute(entryPath)) return false;
+        if (entry.type === "SymbolicLink" || entry.type === "Link") return false;
+        if (typeof entry.size === "number") {
+          totalExtractedBytes += entry.size;
+          if (totalExtractedBytes > sizeCapBytes) return false;
+        }
+        return true;
+      },
+    });
+    if (totalExtractedBytes > sizeCapBytes) {
+      throw new SnapshotError("size_cap_exceeded", `Repository exceeds the ${sizeCapBytes}-byte size cap`);
+    }
 
-  const snapshot = await createSnapshotFromLocal(root, {
-    fileCap,
-    sizeCapBytes,
-  });
+    const extractedEntries = await readdir(extractDir, { withFileTypes: true });
+    const root =
+      extractedEntries.length === 1 && extractedEntries[0]?.isDirectory()
+        ? path.join(extractDir, extractedEntries[0].name)
+        : extractDir;
 
-  const githubSnapshot: Snapshot = {
-    ...snapshot,
-    sha,
-    source: "github",
-    limitedAnalysis: snapshot.limitedAnalysis,
-    dispose: async () => {
-      await rm(tempRoot, { recursive: true, force: true });
-    },
-  };
+    const snapshot = await createSnapshotFromLocal(root, {
+      fileCap,
+      sizeCapBytes,
+    });
 
-  return githubSnapshot;
+    const githubSnapshot: Snapshot = {
+      ...snapshot,
+      sha,
+      source: "github",
+      limitedAnalysis: snapshot.limitedAnalysis,
+      dispose: async () => {
+        await rm(tempRoot, { recursive: true, force: true });
+      },
+    };
+
+    return githubSnapshot;
+  } catch (error) {
+    await rm(tempRoot, { recursive: true, force: true });
+    throw error;
+  }
 }
 
 export async function createSnapshot(input: string, options: SnapshotOptions = {}): Promise<Snapshot> {

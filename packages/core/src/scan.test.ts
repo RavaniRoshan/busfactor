@@ -1,16 +1,29 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { scanSnapshot } from "./scan.js";
+import { scanSnapshot, scanTarget } from "./scan.js";
+import * as snapshotMod from "./snapshot.js";
 import { createSnapshot } from "./snapshot.js";
 import type { LLMProvider, LLMRequest } from "./llm/provider.js";
 import { PROMPT_VERSION } from "./version.js";
 
+vi.mock("./llm/passes.js", async () => {
+  const actual = await vi.importActual<typeof import("./llm/passes.js")>("./llm/passes.js");
+  return {
+    ...actual,
+    runLlmPasses: vi.fn(actual.runLlmPasses),
+  };
+});
+
+import { runLlmPasses } from "./llm/passes.js";
+
 const dirs: string[] = [];
 
 afterEach(() => {
+  vi.mocked(runLlmPasses).mockReset();
+  vi.restoreAllMocks();
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
@@ -37,6 +50,27 @@ class ZeroUsageProvider implements LLMProvider {
 }
 
 describe("scanSnapshot", () => {
+  it("disposes snapshot even when scan throws", async () => {
+    const dispose = vi.fn(async () => undefined);
+    const snapshot = {
+      root: "/tmp/fake",
+      sha: "0".repeat(40),
+      source: "local" as const,
+      files: [],
+      stack: "ts" as const,
+      limitedAnalysis: false,
+      stats: { fileCount: 0, totalBytes: 0, languageCounts: {} },
+      readFile: async () => "",
+      dispose,
+    };
+
+    vi.spyOn(snapshotMod, "createSnapshot").mockResolvedValue(snapshot as any);
+    vi.mocked(runLlmPasses).mockRejectedValueOnce(new Error("boom"));
+
+    await expect(scanTarget("/tmp/fake", {})).rejects.toThrow("boom");
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
   it("includes promptVersion and usage in meta, with costUsd 0 when no rate configured", async () => {
     const dir = mkdtempSync(path.join(os.tmpdir(), "busfactor-scan-"));
     dirs.push(dir);
