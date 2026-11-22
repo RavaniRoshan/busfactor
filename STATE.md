@@ -13,11 +13,11 @@ gates:
   web_persistence_code: pass (Neon adapter + async store API, 35 tests)
   report_workspace: pass (four-view dark workspace, no decorative backdrop, Space UI MIT primitives, 60 tests, fresh review Clean/approve)
   operator_dashboard: pass (real store data, 60 tests, token-gated; production token not set)
-  deterministic_verify: fail (pnpm verify 20/21 passed, 1 failed; see measured)
+  deterministic_verify: pass (pnpm verify 21/21 passed after stale admin-metrics heading assertion fix)
   task11_main_install: pass (pnpm install --frozen-lockfile; lockfile up to date; pnpm v10.15.0)
   task11_main_gate: pass (pnpm gate: typecheck PASS, lint PASS, test PASS; core 14 files/48 tests, web 19 files/91 tests)
   task11_main_verify_build: pass (pnpm verify:build: core build PASS, web Next build PASS, 16/16 static pages)
-  task11_main_verify: fail (pnpm verify: 20 passed, 1 failed; functional.spec.ts:68 expects "BusFactor operations" but /admin/metrics heading is "BusFactor KPI dashboard")
+  task11_main_verify: pass (pnpm verify: 21 passed, 0 failed; stale admin-metrics heading assertion updated to "BusFactor KPI dashboard")
   task11_marketing_install: pass (npm ci --legacy-peer-deps; 290 packages; 2 high severity audit warnings reported)
   task11_marketing_test: pass (vitest: 1 file, 3 tests passed)
   task11_marketing_typecheck: pass (tsc --noEmit)
@@ -40,7 +40,7 @@ measured:
   task11_main_install: PASS (pnpm install --frozen-lockfile, 1.1s)
   task11_main_gate: PASS (pnpm gate; typecheck PASS; lint PASS; test PASS — packages/core 14 files/48 tests, apps/web 19 files/91 tests)
   task11_main_verify_build: PASS (pnpm verify:build; Next compiled successfully; 16/16 static pages)
-  task11_main_verify: FAIL (pnpm verify; Playwright 20 passed / 1 failed / 21 total, 11.4s). Failure: [chromium] tests/functional.spec.ts:68 "API gates reject invalid input and protect admin metrics" — expected authenticated /admin/metrics page text to contain "BusFactor operations", but current page heading/content is "BusFactor KPI dashboard" (apps/web/app/admin/metrics/page.tsx:281). Received HTML title was app home shell. Stale test expectation; not modified in Task 11.
+  task11_main_verify: PASS (pnpm verify rerun after fix; Playwright 21 passed / 0 failed / 21 total, 10.9s). Fixed stale assertion in tests/functional.spec.ts:68 from "BusFactor operations" to "BusFactor KPI dashboard" to match Task 7 dashboard rename.
   task11_marketing_install: PASS (npm ci --legacy-peer-deps; 290 packages; 2 high severity npm audit warnings, no remediation)
   task11_marketing_test: PASS (vitest run; 1 file, 3 tests)
   task11_marketing_typecheck: PASS (tsc --noEmit)
@@ -55,7 +55,6 @@ measured:
   task11_security_kill_switch: PASS (separate local server with BUSFACTOR_KILL_SWITCH=1; POST /api/scan {"target":"https://github.com/owner/repo"} -> 503 {"error":"scans are temporarily disabled","category":"unavailable"})
   task11_analytics_live: BLOCKED: PostHog keys not supplied
 open_blockers:
-  - "pnpm verify fails: tests/functional.spec.ts:68 expects 'BusFactor operations' after admin login, current /admin/metrics heading is 'BusFactor KPI dashboard' (stale test expectation; 20/21 Playwright tests pass)"
   - "BUSFACTOR_ADMIN_TOKEN not set on Vercel — /admin/metrics shows Unauthorized (human-owned)"
   - "BUSFACTOR_ADMIN_SESSION_SECRET not set/configured on Vercel (human-owned; recommended)"
   - "BUSFACTOR_LLM_RATES_JSON not set (human-owned if paid inference; free tier records $0)"
@@ -64,4 +63,4 @@ open_blockers:
   - "Jurisdiction [NEEDED] in legal copy before publication (human-owned)"
   - "Consented demo report URL not supplied (human-owned)"
   - "Gate A/B evidence and human deployment approval/checks pending (human-owned)"
-next: "Resolve stale Playwright admin-metrics assertion (tests/functional.spec.ts expects 'BusFactor operations'; page renders 'BusFactor KPI dashboard'), then rerun pnpm verify. Human-only: supply PostHog keys for live analytics verification, set BUSFACTOR_ADMIN_TOKEN/BUSFACTOR_ADMIN_SESSION_SECRET (+ BUSFACTOR_LLM_RATES_JSON if paid inference) on Vercel, provide npm auth/jurisdiction/consented demo report, complete Gate A/B evidence, approve deployment."
+next: "Human-only: supply PostHog keys for live analytics verification, set BUSFACTOR_ADMIN_TOKEN/BUSFACTOR_ADMIN_SESSION_SECRET (+ BUSFACTOR_LLM_RATES_JSON if paid inference) on Vercel, provide npm auth/jurisdiction/consented demo report, complete Gate A/B evidence, approve deployment. Agent-side verification is green (pnpm gate PASS, pnpm verify PASS 21/21)."

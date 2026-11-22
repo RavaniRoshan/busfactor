@@ -79,7 +79,7 @@ test("API gates reject invalid input and protect admin metrics", async ({ reques
   expect(login.status()).toBe(200);
   const authenticated = await request.get("/admin/metrics");
   expect(authenticated.status()).toBe(200);
-  expect(await authenticated.text()).toContain("BusFactor operations");
+  expect(await authenticated.text()).toContain("BusFactor KPI dashboard");
 
   const fresh = await playwright.request.newContext({ baseURL });
   try {
