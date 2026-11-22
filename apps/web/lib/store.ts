@@ -1,4 +1,4 @@
-import { neonConfig, Pool } from "@neondatabase/serverless";
+import { ensureSchema, getPool, hasDatabase } from "./db";
 
 export interface ScanJob {
   id: string;
@@ -101,41 +101,6 @@ function createMemoryStore(): Store {
   return store;
 }
 
-let pool: Pool | null = null;
-let ready: Promise<void> | null = null;
-
-function connectionString(): string | undefined {
-  return process.env.DATABASE_URL ?? process.env.NEON_DATABASE_URL ?? process.env.POSTGRES_URL;
-}
-
-function getPool(): Pool {
-  const url = connectionString();
-  if (!url) throw new Error("No Postgres connection string is set");
-  if (!pool) {
-    // HTTP queries avoid needing a WebSocket in serverless runtimes.
-    neonConfig.poolQueryViaFetch = true;
-    pool = new Pool({ connectionString: url });
-  }
-  return pool;
-}
-
-function ensureSchema(): Promise<void> {
-  if (!ready) {
-    ready = getPool()
-      .query(
-        `CREATE TABLE IF NOT EXISTS busfactor_store (
-          namespace text NOT NULL,
-          key text NOT NULL,
-          value jsonb NOT NULL,
-          updated_at timestamptz NOT NULL DEFAULT now(),
-          PRIMARY KEY (namespace, key)
-        )`
-      )
-      .then(() => undefined);
-  }
-  return ready;
-}
-
 function pgKV<T>(namespace: string): KV<T> {
   return {
     async get(key) {
@@ -221,7 +186,7 @@ function createPostgresStore(): Store {
   };
 }
 
-export const store: Store = connectionString() ? createPostgresStore() : createMemoryStore();
+export const store: Store = hasDatabase() ? createPostgresStore() : createMemoryStore();
 
 export function makeSlug() {
   return Math.random().toString(36).slice(2, 10);

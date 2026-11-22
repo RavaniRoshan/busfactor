@@ -1,17 +1,8 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
+import { records } from "@/lib/records";
 import { store, type ScanJob } from "@/lib/store";
-import { summarizeFeedback, summarizeJobs } from "@/lib/ops-summary";
+import { summarizeJobs } from "@/lib/ops-summary";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedNumber } from "@/components/animated-number";
-
-async function readJsonArray(filePath: string): Promise<unknown[]> {
-  try {
-    return JSON.parse(await readFile(filePath, "utf8")) as unknown[];
-  } catch {
-    return [];
-  }
-}
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -53,15 +44,14 @@ export default async function AdminMetricsPage({
     );
   }
 
-  const [waitlist, feedback, jobs, reportCount] = await Promise.all([
-    readJsonArray(path.join(process.cwd(), "data", "waitlist.json")),
-    readJsonArray(path.join(process.cwd(), "data", "feedback.json")),
+  const [waitlistCount, validation, jobs, reportCount] = await Promise.all([
+    records.countWaitlist(),
+    records.feedbackSummary(),
     store.jobs.values(),
     store.reports.count(),
   ]);
 
   const health = summarizeJobs(jobs as ScanJob[]);
-  const validation = summarizeFeedback(feedback as Array<{ helpful?: unknown }>);
   const action =
     health.failed > 0
       ? "Review the failed scan IDs below before inviting new users."
@@ -82,7 +72,7 @@ export default async function AdminMetricsPage({
           <div>
             <h1 className="type-display">BusFactor operations</h1>
             <p className="mt-sm text-label-sm text-text-secondary">
-              Scans, reports and validation signal. All numbers come from the live store and local data files.
+              Scans, reports and validation signal. All numbers come from the live store and durable records.
             </p>
           </div>
           <Badge variant="warning">Internal · noindex</Badge>
@@ -97,7 +87,7 @@ export default async function AdminMetricsPage({
             unit={`of ${health.total} scans`}
             note="Provisional alert threshold: 5%"
           />
-          <Kpi label="Waitlist" value={waitlist.length} unit="emails" note="Email addresses are never displayed" />
+          <Kpi label="Waitlist" value={waitlistCount} unit="emails" note="Email addresses are never displayed" />
         </div>
 
         <div className="mt-xl grid gap-xl lg:grid-cols-2">
