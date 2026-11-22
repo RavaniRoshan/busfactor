@@ -13,7 +13,7 @@ const navItems: { label: string; href: string; primary?: boolean }[] = [
 
 export function SiteHeader() {
   return (
-    <header className="mx-auto flex w-full max-w-page items-center justify-between gap-lg px-xl py-xl md:px-2xl">
+    <header className="sticky top-0 z-40 mx-auto flex w-full max-w-page items-center justify-between gap-lg border-b border-border-secondary bg-background/80 px-xl py-md backdrop-blur md:px-2xl">
       <a href="/scan" className="rounded-corner-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50" aria-label="BusFactor app home">
         <Logo />
       </a>

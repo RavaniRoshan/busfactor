@@ -14,7 +14,7 @@
   --spacing-2xl: 2rem;
   --spacing-3xl: 4rem;
   --spacing-4xl: 6rem;
-  --spacing-section: 10rem;
+  --spacing-section: 8rem;
 
   --radius-corner-sm: 0.25rem;
   --radius-corner-md: 0.5rem;
@@ -136,7 +136,7 @@
   --ring: var(--brand-primary);
   --popover: var(--surface-bg);
   --popover-foreground: var(--text-primary);
-  --radius: 0.625rem;
+  --radius: 0.5rem;
 
   --chart-1: oklch(0.55 0.19 259);
   --chart-2: oklch(0.68 0.15 150);
