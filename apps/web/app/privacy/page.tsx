@@ -31,7 +31,18 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-label font-medium text-text-primary">How repository content is handled</h2>
           <p className="mt-sm text-label-sm text-text-secondary">
-            Repository code is never executed. Downloaded GitHub snapshots are written to a temporary directory and deleted when the scan finishes; only the derived findings and report are retained. When a live LLM key is configured, selected repository excerpts are sent to Groq for analysis. No analytics or advertising scripts are loaded.
+            Repository code is never executed. Downloaded GitHub snapshots are written to a temporary directory and deleted when the scan finishes; only the derived findings and report are retained. When a live LLM key is configured, selected repository excerpts are sent to Groq for analysis.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-label font-medium text-text-primary">Analytics</h2>
+          <p className="mt-sm text-label-sm text-text-secondary">
+            If you accept the in-app analytics banner, BusFactor uses PostHog product analytics to understand which pages
+            and actions are useful. Analytics is consent-gated, does not use session recording or autocapture, and does
+            not send repository contents, repository URLs, local paths, report slugs, emails, secrets, or full reports.
+            Event details are documented in <code className="font-mono">docs/analytics.md</code>. Full retention
+            reconciliation across app, analytics, and legal records is handled by Task 10.
           </p>
         </section>
 

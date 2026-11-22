@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { capture } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 
 export default function FeedbackWidget({ slug }: { slug: string }) {
@@ -16,7 +17,12 @@ export default function FeedbackWidget({ slug }: { slug: string }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ slug, helpful, note: "" }),
       });
-      setStatus(response.ok ? (helpful ? "Thanks: marked helpful." : "Thanks: marked not helpful.") : "Could not record your feedback.");
+      if (response.ok) {
+        capture("feedback_submitted", { helpful });
+        setStatus(helpful ? "Thanks: marked helpful." : "Thanks: marked not helpful.");
+      } else {
+        setStatus("Could not record your feedback.");
+      }
     } catch {
       setStatus("Could not record your feedback.");
     } finally {

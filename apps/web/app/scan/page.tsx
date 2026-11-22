@@ -1,3 +1,4 @@
+import { ScanPageTracker } from "@/components/analytics-provider";
 import { PageFrame, PageIntro } from "@/components/site-chrome";
 import { ScanForm } from "@/components/scan-form";
 
@@ -9,6 +10,7 @@ export const metadata = {
 export default function ScanPage() {
   return (
     <PageFrame>
+      <ScanPageTracker />
       <PageIntro
         eyebrow="No signup"
         title="Scan a repository"

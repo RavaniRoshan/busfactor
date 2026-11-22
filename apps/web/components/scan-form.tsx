@@ -4,6 +4,7 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScanProgress } from "@/components/scan-progress";
+import { bucketFileCount, capture, hasCompletedScan, markScanCompleted } from "@/lib/analytics";
 
 export function ScanForm() {
   const [target, setTarget] = React.useState("");
@@ -20,6 +21,30 @@ export function ScanForm() {
     return () => window.clearInterval(timer);
   }, [startedAt]);
 
+  function recordScanSuccess(body: {
+    cacheHit?: boolean;
+    durationMs?: number;
+    model?: string | null;
+    rubricVersion?: string | null;
+    stack?: string | null;
+    fileCount?: number | null;
+  }) {
+    if (hasCompletedScan()) capture("repeat_scan_completed");
+    capture("scan_succeeded", {
+      cache_hit: body.cacheHit === true,
+      duration_ms: typeof body.durationMs === "number" ? body.durationMs : undefined,
+      model: typeof body.model === "string" ? body.model : undefined,
+      rubric_version: typeof body.rubricVersion === "string" ? body.rubricVersion : undefined,
+      stack: typeof body.stack === "string" ? body.stack : undefined,
+      file_count_bucket: typeof body.fileCount === "number" ? bucketFileCount(body.fileCount) : undefined,
+    });
+    markScanCompleted();
+  }
+
+  function recordScanFailure(errorMessage: string) {
+    capture("scan_failed", { error_category: categorizeScanErrorMessage(errorMessage) });
+  }
+
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -27,6 +52,7 @@ export function ScanForm() {
     setStatus("running");
     setElapsedMs(0);
     setStartedAt(Date.now());
+    capture("scan_started");
     try {
       const response = await fetch("/api/scan", {
         method: "POST",
@@ -38,10 +64,19 @@ export function ScanForm() {
         status?: string;
         slug?: string;
         cached?: boolean;
+        cacheHit?: boolean;
+        durationMs?: number;
+        model?: string | null;
+        rubricVersion?: string | null;
+        stack?: string | null;
+        fileCount?: number | null;
         error?: string;
+        category?: string;
       };
       if (!response.ok) {
-        setError(typeof body.error === "string" && body.error ? body.error : "Scan failed.");
+        const message = typeof body.error === "string" && body.error ? body.error : "Scan failed.";
+        recordScanFailure(typeof body.category === "string" ? body.category : message);
+        setError(message);
         setStatus("");
         setStartedAt(null);
         return;
@@ -51,6 +86,7 @@ export function ScanForm() {
       setJobId(createdId);
       if (body.cached === true) setCached(true);
       if (body.status === "complete" && typeof body.slug === "string") {
+        recordScanSuccess(body);
         setStatus("complete");
         window.location.href = `/r/${body.slug}`;
         return;
@@ -61,7 +97,14 @@ export function ScanForm() {
         const current = (await statusResponse.json().catch(() => ({}))) as {
           status?: string;
           error?: string;
+          category?: string;
           slug?: string;
+          cacheHit?: boolean;
+          durationMs?: number;
+          model?: string | null;
+          rubricVersion?: string | null;
+          stack?: string | null;
+          fileCount?: number | null;
         };
         const currentStatus = typeof current.status === "string" ? current.status : "";
         setStatus(currentStatus);
@@ -70,16 +113,20 @@ export function ScanForm() {
           return;
         }
         if (currentStatus === "complete" && typeof current.slug === "string") {
+          recordScanSuccess(current);
           window.location.href = `/r/${current.slug}`;
           return;
         }
         if (currentStatus === "failed") {
-          setError(typeof current.error === "string" && current.error ? current.error : "Scan failed.");
+          const message = typeof current.error === "string" && current.error ? current.error : "Scan failed.";
+          recordScanFailure(typeof current.category === "string" ? current.category : message);
+          setError(message);
           setStartedAt(null);
         }
       };
       void poll();
     } catch {
+      recordScanFailure("network_error");
       setError("Could not reach the scan service.");
       setStatus("");
       setStartedAt(null);
@@ -138,4 +185,17 @@ function ScanningSpinner() {
       className="ui-spinner inline-block size-4 rounded-full border-2 border-current border-t-transparent"
     />
   );
+}
+
+function categorizeScanErrorMessage(message: string): string {
+  const normalized = message.toLowerCase();
+  if (message.includes("_")) return message;
+  if (normalized.includes("rate limit")) return "rate_limited";
+  if (normalized.includes("spend cap")) return "spend_cap";
+  if (normalized.includes("invalid")) return "invalid_input";
+  if (normalized.includes("not found")) return "repo_not_found";
+  if (normalized.includes("too large") || normalized.includes("exceeds")) return "repo_too_large";
+  if (normalized.includes("provider")) return "provider_error";
+  if (normalized.includes("temporarily disabled")) return "unavailable";
+  return "internal_error";
 }
