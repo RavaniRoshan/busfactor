@@ -18,6 +18,7 @@ export function unavailableAnalytics(): AnalyticsSummary {
     reportsShared: null,
     feedbackSubmitted: null,
     qualifiedScans7d: null,
+    breakdownsAvailable: false,
     campaigns: [],
     sources: [],
   };
@@ -71,7 +72,9 @@ async function hogqlQuery<T>(
   }
 }
 
-function parseSummaryRow(row: unknown[] | undefined): Omit<AnalyticsSummary, "available" | "campaigns" | "sources" | "qualifiedScans7d"> | null {
+function parseSummaryRow(
+  row: unknown[] | undefined
+): Omit<AnalyticsSummary, "available" | "campaigns" | "sources" | "qualifiedScans7d" | "breakdownsAvailable"> | null {
   if (!row) return null;
   const [
     visitors,
@@ -172,8 +175,13 @@ WHERE a.timestamp >= s.scan_ts AND a.timestamp <= s.scan_ts + INTERVAL 7 DAY
   const summary = parseSummaryRow(summaryRows?.[0]);
   if (!summaryRows || !summary) return unavailableAnalytics();
 
-  const campaigns = parseBreakdown(campaignRows, "campaign") as Array<{ campaign: string; visitors: number }>;
-  const sources = parseBreakdown(sourceRows, "source") as Array<{ source: string; visitors: number }>;
+  const breakdownsAvailable = campaignRows !== null && sourceRows !== null;
+  const campaigns = breakdownsAvailable
+    ? (parseBreakdown(campaignRows, "campaign") as Array<{ campaign: string; visitors: number }>)
+    : [];
+  const sources = breakdownsAvailable
+    ? (parseBreakdown(sourceRows, "source") as Array<{ source: string; visitors: number }>)
+    : [];
 
   let qualifiedScans7d: number | null = null;
   if (qualifiedRows && qualifiedRows[0]) {
@@ -184,6 +192,7 @@ WHERE a.timestamp >= s.scan_ts AND a.timestamp <= s.scan_ts + INTERVAL 7 DAY
     available: true,
     ...summary,
     qualifiedScans7d,
+    breakdownsAvailable,
     campaigns,
     sources,
   };

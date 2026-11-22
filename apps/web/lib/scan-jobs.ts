@@ -39,6 +39,7 @@ export interface ScanCost {
   cachedTokens: number;
   requests: number;
   costUsd: number;
+  createdAt?: string;
 }
 
 interface ScanJobStore {
@@ -251,13 +252,17 @@ function createMemoryStore(): ScanJobStore {
       return computeJobMetrics(jobs);
     },
     async recordCost(cost) {
-      state.costs.push({ ...cost });
+      state.costs.push({ ...cost, createdAt: cost.createdAt ?? nowIso() });
     },
     async costSummary(sinceDays) {
       const cutoff = Date.now() - Math.max(0, sinceDays) * 24 * 60 * 60 * 1000;
-      // Memory costs don't have createdAt; include all for simplicity in no-db mode.
-      void cutoff;
-      const values = state.costs.map((cost) => cost.costUsd).sort((a, b) => a - b);
+      const values = state.costs
+        .filter((cost) => {
+          const ts = Date.parse(cost.createdAt ?? "");
+          return Number.isFinite(ts) ? ts >= cutoff : true;
+        })
+        .map((cost) => cost.costUsd)
+        .sort((a, b) => a - b);
       if (values.length === 0) return { totalUsd: 0, averageUsd: 0, medianUsd: 0 };
       const totalUsd = values.reduce((sum, value) => sum + value, 0);
       const mid = Math.floor(values.length / 2);

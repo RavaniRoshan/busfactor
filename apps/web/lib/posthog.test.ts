@@ -39,24 +39,50 @@ describe("posthog analytics", () => {
     expect(summary.visitors).toBeNull();
   });
 
+  it("returns unavailable for invalid days without calling fetch", async () => {
+    process.env.POSTHOG_PERSONAL_API_KEY = "phx_test";
+    process.env.POSTHOG_PROJECT_ID = "123";
+    const fetchSpy = vi.fn();
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+
+    const summary = await getAnalyticsSummary(14);
+    expect(summary.available).toBe(false);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("returns unavailable on malformed json/body", async () => {
+    process.env.POSTHOG_PERSONAL_API_KEY = "phx_test";
+    process.env.POSTHOG_PROJECT_ID = "123";
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response("not-json", { status: 200 })) as unknown as typeof fetch;
+    expect((await getAnalyticsSummary(30)).available).toBe(false);
+
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ results: "bad" }), { status: 200 })) as unknown as typeof fetch;
+    expect((await getAnalyticsSummary(30)).available).toBe(false);
+  });
+
+  it("returns unavailable on fetch rejection/timeout", async () => {
+    process.env.POSTHOG_PERSONAL_API_KEY = "phx_test";
+    process.env.POSTHOG_PROJECT_ID = "123";
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error("timeout")) as unknown as typeof fetch;
+
+    const summary = await getAnalyticsSummary(30);
+    expect(summary.available).toBe(false);
+  });
+
   it("parses a successful summary response", async () => {
     process.env.POSTHOG_PERSONAL_API_KEY = "phx_test";
     process.env.POSTHOG_PROJECT_ID = "123";
     process.env.POSTHOG_API_HOST = "https://us.posthog.com";
 
     const responses = [
-      {
-        results: [[100, 80, 12, 40, 20, 5, 3, 2]],
-      },
-      {
-        results: [["launch", 50]],
-      },
-      {
-        results: [["google", 30]],
-      },
-      {
-        results: [[7]],
-      },
+      { results: [[100, 80, 12, 40, 20, 5, 3, 2]] },
+      { results: [["launch", 50]] },
+      { results: [["google", 30]] },
+      { results: [[7]] },
     ];
     const fetchMock = vi.fn().mockImplementation(() =>
       Promise.resolve(
@@ -78,6 +104,7 @@ describe("posthog analytics", () => {
     expect(summary.reportDownloads).toBe(5);
     expect(summary.reportsShared).toBe(3);
     expect(summary.feedbackSubmitted).toBe(2);
+    expect(summary.breakdownsAvailable).toBe(true);
     expect(summary.campaigns).toEqual([{ campaign: "launch", visitors: 50 }]);
     expect(summary.sources).toEqual([{ source: "google", visitors: 30 }]);
     expect(summary.qualifiedScans7d).toBe(7);
@@ -85,5 +112,43 @@ describe("posthog analytics", () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("https://us.posthog.com/api/projects/123/query/");
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer phx_test");
+  });
+
+  it("marks breakdowns unavailable when campaign/source queries fail but summary succeeds", async () => {
+    process.env.POSTHOG_PERSONAL_API_KEY = "phx_test";
+    process.env.POSTHOG_PROJECT_ID = "123";
+
+    const responses = [
+      new Response(JSON.stringify({ results: [[10, 8, 1, 3, 2, 1, 0, 1]] }), { status: 200 }),
+      new Response("bad", { status: 500 }),
+      new Response(JSON.stringify({ results: [["google", 2]] }), { status: 200 }),
+      new Response(JSON.stringify({ results: [[1]] }), { status: 200 }),
+    ];
+    globalThis.fetch = vi.fn().mockImplementation(() => Promise.resolve(responses.shift()!)) as unknown as typeof fetch;
+
+    const summary = await getAnalyticsSummary(30);
+    expect(summary.available).toBe(true);
+    expect(summary.visitors).toBe(10);
+    expect(summary.breakdownsAvailable).toBe(false);
+    expect(summary.campaigns).toEqual([]);
+    expect(summary.sources).toEqual([]);
+  });
+
+  it("keeps summary available when qualified query fails", async () => {
+    process.env.POSTHOG_PERSONAL_API_KEY = "phx_test";
+    process.env.POSTHOG_PROJECT_ID = "123";
+
+    const responses = [
+      new Response(JSON.stringify({ results: [[10, 8, 1, 3, 2, 1, 0, 1]] }), { status: 200 }),
+      new Response(JSON.stringify({ results: [["launch", 3]] }), { status: 200 }),
+      new Response(JSON.stringify({ results: [["google", 2]] }), { status: 200 }),
+      new Response("bad", { status: 500 }),
+    ];
+    globalThis.fetch = vi.fn().mockImplementation(() => Promise.resolve(responses.shift()!)) as unknown as typeof fetch;
+
+    const summary = await getAnalyticsSummary(30);
+    expect(summary.available).toBe(true);
+    expect(summary.breakdownsAvailable).toBe(true);
+    expect(summary.qualifiedScans7d).toBeNull();
   });
 });

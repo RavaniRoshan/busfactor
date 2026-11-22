@@ -11,6 +11,7 @@ export interface AnalyticsSummary {
   reportsShared: number | null;
   feedbackSubmitted: number | null;
   qualifiedScans7d: number | null;
+  breakdownsAvailable: boolean;
   campaigns: Array<{ campaign: string; visitors: number }>;
   sources: Array<{ source: string; visitors: number }>;
 }
@@ -44,6 +45,7 @@ export interface DashboardMetrics {
     scannerCtaClicks: number | null;
     scanPageViews: number | null;
     landingConversionPct: number | null;
+    breakdownsAvailable: boolean;
     campaigns: AnalyticsSummary["campaigns"];
     sources: AnalyticsSummary["sources"];
   };
@@ -168,8 +170,9 @@ export function buildDashboardMetrics(input: DashboardMetricsInput): DashboardMe
       scannerCtaClicks: analyticsAvailable ? analytics.scannerCtaClicks : null,
       scanPageViews,
       landingConversionPct,
-      campaigns: analyticsAvailable ? analytics.campaigns : [],
-      sources: analyticsAvailable ? analytics.sources : [],
+      breakdownsAvailable: analyticsAvailable ? analytics.breakdownsAvailable : false,
+      campaigns: analyticsAvailable && analytics.breakdownsAvailable ? analytics.campaigns : [],
+      sources: analyticsAvailable && analytics.breakdownsAvailable ? analytics.sources : [],
     },
     engagement: {
       scanStarts: totalScans,

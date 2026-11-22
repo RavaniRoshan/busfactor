@@ -76,4 +76,36 @@ describe("scan jobs", () => {
     expect(categorizeScanError(new SnapshotError("github_unavailable", "x"))).toBe("provider_error");
     expect(categorizeScanError(Object.assign(new TypeError("fetch failed"), { code: "ECONNRESET" }))).toBe("provider_error");
   });
+
+  it("excludes old memory costs from costSummary window", async () => {
+    const oldTs = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
+    const recentTs = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+    await scanJobs.recordCost({
+      scanId: "old-scan",
+      provider: "test",
+      model: "test",
+      inputTokens: 1,
+      outputTokens: 1,
+      cachedTokens: 0,
+      requests: 1,
+      costUsd: 10,
+      createdAt: oldTs,
+    });
+    await scanJobs.recordCost({
+      scanId: "recent-scan",
+      provider: "test",
+      model: "test",
+      inputTokens: 1,
+      outputTokens: 1,
+      cachedTokens: 0,
+      requests: 1,
+      costUsd: 1,
+      createdAt: recentTs,
+    });
+
+    const summary7 = await scanJobs.costSummary(7);
+    const summary90 = await scanJobs.costSummary(90);
+    expect(summary7.totalUsd).toBe(1);
+    expect(summary90.totalUsd).toBe(11);
+  });
 });

@@ -114,7 +114,15 @@ function RangeSelector({ current }: { current: 7 | 30 | 90 }) {
   );
 }
 
-function AcquisitionSection({ metrics, projectId }: { metrics: DashboardMetrics; projectId: string | undefined }) {
+function AcquisitionSection({
+  metrics,
+  projectId,
+  posthogHost,
+}: {
+  metrics: DashboardMetrics;
+  projectId: string | undefined;
+  posthogHost: string;
+}) {
   const a = metrics.acquisition;
   return (
     <Section id="acquisition" title="B. Acquisition">
@@ -123,16 +131,34 @@ function AcquisitionSection({ metrics, projectId }: { metrics: DashboardMetrics;
       ) : (
         <>
           <div className="grid gap-xl sm:grid-cols-2 lg:grid-cols-3">
-            <Kpi label="Visitors" value={a.visitors ?? 0} unit="people" />
-            <Kpi label="Landing visitors" value={a.landingVisitors ?? 0} unit="people" />
-            <Kpi label="Scanner CTA clicks" value={a.scannerCtaClicks ?? 0} unit="clicks" />
-            <Kpi label="Scan page views" value={a.scanPageViews ?? 0} unit="views" />
-            <Kpi label="Landing conversion" value={pct(a.landingConversionPct)} unit="scan / landing" />
+            <Kpi label="Visitors" value={a.visitors ?? "—"} unit={a.visitors === null ? "unavailable" : "people"} />
+            <Kpi
+              label="Landing visitors"
+              value={a.landingVisitors ?? "—"}
+              unit={a.landingVisitors === null ? "unavailable" : "people"}
+            />
+            <Kpi
+              label="Scanner CTA clicks"
+              value={a.scannerCtaClicks ?? "—"}
+              unit={a.scannerCtaClicks === null ? "unavailable" : "clicks"}
+            />
+            <Kpi
+              label="Scan page views"
+              value={a.scanPageViews ?? "—"}
+              unit={a.scanPageViews === null ? "unavailable" : "views"}
+            />
+            <Kpi
+              label="Landing conversion"
+              value={a.landingConversionPct === null ? "—" : `${a.landingConversionPct}%`}
+              unit={a.landingConversionPct === null ? "unavailable" : "scan / landing"}
+            />
           </div>
           <div className="mt-xl grid gap-xl lg:grid-cols-2">
             <div>
               <h3 className="text-label-sm font-medium text-text-primary">Campaigns</h3>
-              {a.campaigns.length === 0 ? (
+              {!a.breakdownsAvailable ? (
+                <p className="mt-sm text-label-sm text-text-secondary">Unavailable.</p>
+              ) : a.campaigns.length === 0 ? (
                 <p className="mt-sm text-label-sm text-text-secondary">No data yet.</p>
               ) : (
                 <div className="mt-sm overflow-x-auto">
@@ -157,7 +183,9 @@ function AcquisitionSection({ metrics, projectId }: { metrics: DashboardMetrics;
             </div>
             <div>
               <h3 className="text-label-sm font-medium text-text-primary">Sources</h3>
-              {a.sources.length === 0 ? (
+              {!a.breakdownsAvailable ? (
+                <p className="mt-sm text-label-sm text-text-secondary">Unavailable.</p>
+              ) : a.sources.length === 0 ? (
                 <p className="mt-sm text-label-sm text-text-secondary">No data yet.</p>
               ) : (
                 <div className="mt-sm overflow-x-auto">
@@ -184,7 +212,7 @@ function AcquisitionSection({ metrics, projectId }: { metrics: DashboardMetrics;
           {projectId ? (
             <p className="mt-lg text-label-sm text-text-secondary">
               <a
-                href={`https://us.posthog.com/project/${projectId}`}
+                href={`${posthogHost}/project/${projectId}`}
                 className="underline underline-offset-4 hover:text-text-primary"
                 target="_blank"
                 rel="noreferrer"
@@ -243,6 +271,7 @@ export default async function AdminMetricsPage({
   });
 
   const projectId = process.env.POSTHOG_PROJECT_ID?.trim();
+  const posthogHost = (process.env.POSTHOG_API_HOST?.trim() || "https://us.posthog.com").replace(/\/+$/, "");
 
   return (
     <main className="min-h-screen bg-brand-tertiary px-xl py-4xl text-text-primary md:px-2xl">
@@ -251,7 +280,7 @@ export default async function AdminMetricsPage({
           <div>
             <h1 className="type-display">BusFactor KPI dashboard</h1>
             <p className="mt-sm text-label-sm text-text-secondary">
-              Real data only. Range: last {days} days. No customer emails are displayed.
+              Real data only. Range-scoped cards show the last {days} days; lifetime and current-day cards are labeled explicitly. No customer emails are displayed.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-md">
@@ -264,48 +293,56 @@ export default async function AdminMetricsPage({
         <div className="mt-3xl grid gap-xl">
           <Section id="business-overview" title="A. Business overview">
             <div className="grid gap-xl sm:grid-cols-2 lg:grid-cols-4">
-              <Kpi label="Total scans" value={metrics.business.totalScans} unit="scans" />
-              <Kpi label="Successful scans" value={metrics.business.successfulScans} unit="scans" />
-              <Kpi label="Reports" value={metrics.business.reports} unit="reports" />
-              <Kpi label="Waitlist" value={metrics.business.waitlist} unit="signups" />
-              <Kpi label="Feedback answers" value={metrics.business.feedbackAnswers} unit="answers" />
+              <Kpi label="Total scans" value={metrics.business.totalScans} unit={`scans · last ${days} days`} />
+              <Kpi
+                label="Successful scans"
+                value={metrics.business.successfulScans}
+                unit={`scans · last ${days} days`}
+              />
+              <Kpi label="Reports" value={metrics.business.reports} unit="reports · all time" />
+              <Kpi label="Waitlist" value={metrics.business.waitlist} unit="signups · all time" />
+              <Kpi label="Feedback answers" value={metrics.business.feedbackAnswers} unit="answers · all time" />
               <Kpi label="Paying customers" value="Not enabled" note="Billing is not enabled in this build." />
               <Kpi label="MRR" value="Not enabled" note="Billing is not enabled in this build." />
             </div>
           </Section>
 
-          <AcquisitionSection metrics={metrics} projectId={projectId} />
+          <AcquisitionSection metrics={metrics} projectId={projectId} posthogHost={posthogHost} />
 
           <Section id="activation-engagement" title="C. Activation and engagement">
             <div className="grid gap-xl sm:grid-cols-2 lg:grid-cols-4">
-              <Kpi label="Scan starts" value={metrics.engagement.scanStarts} unit="jobs" />
-              <Kpi label="Successes" value={metrics.engagement.successes} unit="jobs" />
-              <Kpi label="Failures" value={metrics.engagement.failures} unit="jobs" />
-              <Kpi label="Completion rate" value={`${metrics.engagement.completionRatePct}%`} unit="complete" />
+              <Kpi label="Scan starts" value={metrics.engagement.scanStarts} unit={`jobs · last ${days} days`} />
+              <Kpi label="Successes" value={metrics.engagement.successes} unit={`jobs · last ${days} days`} />
+              <Kpi label="Failures" value={metrics.engagement.failures} unit={`jobs · last ${days} days`} />
+              <Kpi
+                label="Completion rate"
+                value={`${metrics.engagement.completionRatePct}%`}
+                unit={`complete · last ${days} days`}
+              />
               <Kpi
                 label="Report views"
                 value={metrics.engagement.reportViews ?? "—"}
-                unit={metrics.acquisition.available ? "views" : "not configured"}
+                unit={metrics.acquisition.available ? `views · last ${days} days` : "not configured"}
               />
               <Kpi
                 label="Report downloads"
                 value={metrics.engagement.reportDownloads ?? "—"}
-                unit={metrics.acquisition.available ? "downloads" : "not configured"}
+                unit={metrics.acquisition.available ? `downloads · last ${days} days` : "not configured"}
               />
               <Kpi
                 label="Reports shared"
                 value={metrics.engagement.reportsShared ?? "—"}
-                unit={metrics.acquisition.available ? "shares" : "not configured"}
+                unit={metrics.acquisition.available ? `shares · last ${days} days` : "not configured"}
               />
               <Kpi
                 label="Feedback submitted"
                 value={metrics.engagement.feedbackSubmitted ?? "—"}
-                unit={metrics.acquisition.available ? "events" : "not configured"}
+                unit={metrics.acquisition.available ? `events · last ${days} days` : "not configured"}
               />
               <Kpi
                 label="Positive feedback"
                 value={pct(metrics.engagement.positiveFeedbackRate)}
-                unit="of explicit answers"
+                unit="of explicit answers · all time"
               />
               <Kpi
                 label="Repeat scan rate"
@@ -315,7 +352,7 @@ export default async function AdminMetricsPage({
               <Kpi
                 label="Qualified scans (7d)"
                 value={metrics.engagement.qualifiedScans7d ?? "—"}
-                unit="North Star"
+                unit={`North Star · last ${days} days`}
                 note="Scan succeeded + download/share/feedback within 7 days."
               />
             </div>
@@ -323,26 +360,30 @@ export default async function AdminMetricsPage({
 
           <Section id="operational-health" title="D. Operational health">
             <div className="grid gap-xl sm:grid-cols-2 lg:grid-cols-4">
-              <Kpi label="Success rate" value={`${metrics.operations.successRatePct}%`} unit="of jobs" />
-              <Kpi label="Failure rate" value={`${metrics.operations.failureRatePct}%`} unit="of jobs" />
+              <Kpi label="Success rate" value={`${metrics.operations.successRatePct}%`} unit={`of jobs · last ${days} days`} />
+              <Kpi label="Failure rate" value={`${metrics.operations.failureRatePct}%`} unit={`of jobs · last ${days} days`} />
               <Kpi
                 label="Median duration"
                 value={metrics.operations.medianDurationMs === null ? "—" : Math.round(metrics.operations.medianDurationMs / 1000)}
-                unit={metrics.operations.medianDurationMs === null ? "no data" : "seconds"}
+                unit={metrics.operations.medianDurationMs === null ? "no data" : `seconds · last ${days} days`}
               />
               <Kpi
                 label="P95 duration"
                 value={metrics.operations.p95DurationMs === null ? "—" : Math.round(metrics.operations.p95DurationMs / 1000)}
-                unit={metrics.operations.p95DurationMs === null ? "no data" : "seconds"}
+                unit={metrics.operations.p95DurationMs === null ? "no data" : `seconds · last ${days} days`}
               />
-              <Kpi label="Running jobs" value={metrics.operations.runningJobs} unit="jobs" />
-              <Kpi label="Failed jobs" value={metrics.operations.failedJobs} unit="jobs" />
-              <Kpi label="Cache hit rate" value={`${metrics.operations.cacheHitRatePct}%`} unit="of complete" />
-              <Kpi label="Database health" value={metrics.operations.databaseHealth} unit="status" />
-              <Kpi label="Provider errors" value={metrics.operations.providerErrors} unit="jobs" />
-              <Kpi label="Spend today" value={formatUsdShort(metrics.operations.spendTodayUsd)} unit="USD" />
-              <Kpi label="Spend cap" value={formatUsdShort(metrics.operations.spendCapUsd)} unit="USD/day" />
-              <Kpi label="Spend used" value={`${metrics.operations.spendPct}%`} unit="of cap" />
+              <Kpi label="Running jobs" value={metrics.operations.runningJobs} unit={`jobs · last ${days} days`} />
+              <Kpi label="Failed jobs" value={metrics.operations.failedJobs} unit={`jobs · last ${days} days`} />
+              <Kpi
+                label="Cache hit rate"
+                value={`${metrics.operations.cacheHitRatePct}%`}
+                unit={`of complete · last ${days} days`}
+              />
+              <Kpi label="Database health" value={metrics.operations.databaseHealth} unit="status · current" />
+              <Kpi label="Provider errors" value={metrics.operations.providerErrors} unit={`jobs · last ${days} days`} />
+              <Kpi label="Spend today" value={formatUsdShort(metrics.operations.spendTodayUsd)} unit="USD · today" />
+              <Kpi label="Spend cap" value={formatUsdShort(metrics.operations.spendCapUsd)} unit="USD/day · current" />
+              <Kpi label="Spend used" value={`${metrics.operations.spendPct}%`} unit="of cap · today" />
             </div>
           </Section>
 
@@ -354,21 +395,25 @@ export default async function AdminMetricsPage({
 
           <Section id="unit-economics" title="F. Unit economics">
             <div className="grid gap-xl sm:grid-cols-2 lg:grid-cols-4">
-              <Kpi label="Total LLM cost" value={formatUsd(metrics.unitEconomics.totalLlmCostUsd)} unit="USD" />
+              <Kpi
+                label="Total LLM cost"
+                value={formatUsd(metrics.unitEconomics.totalLlmCostUsd)}
+                unit={`USD · last ${days} days`}
+              />
               <Kpi
                 label="Avg cost / attempt"
                 value={formatUsd(metrics.unitEconomics.averageCostPerAttemptUsd)}
-                unit="USD"
+                unit={`USD · last ${days} days`}
               />
               <Kpi
                 label="Median cost / attempt"
                 value={formatUsd(metrics.unitEconomics.medianCostPerAttemptUsd)}
-                unit="USD"
+                unit={`USD · last ${days} days`}
               />
               <Kpi
                 label="Cost / successful scan"
                 value={formatUsd(metrics.unitEconomics.costPerSuccessfulScanUsd)}
-                unit="USD"
+                unit={`USD · last ${days} days`}
               />
             </div>
             <ul className="mt-xl">
