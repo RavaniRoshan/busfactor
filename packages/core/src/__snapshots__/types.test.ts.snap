@@ -250,6 +250,10 @@ exports[`report contract > matches the exported JSON schema snapshot 1`] = `
         "limitedAnalysis": {
           "type": "boolean",
         },
+        "promptVersion": {
+          "minLength": 1,
+          "type": "string",
+        },
         "rubricVersion": {
           "minLength": 1,
           "type": "string",
@@ -285,14 +289,57 @@ exports[`report contract > matches the exported JSON schema snapshot 1`] = `
           "minimum": 0,
           "type": "integer",
         },
+        "usage": {
+          "additionalProperties": false,
+          "properties": {
+            "cachedTokens": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "inputTokens": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "model": {
+              "type": "string",
+            },
+            "outputTokens": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "provider": {
+              "minLength": 1,
+              "type": "string",
+            },
+            "requests": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+          },
+          "required": [
+            "provider",
+            "model",
+            "inputTokens",
+            "outputTokens",
+            "cachedTokens",
+            "requests",
+          ],
+          "type": "object",
+        },
       },
       "required": [
         "engineVersion",
         "rubricVersion",
+        "promptVersion",
         "sha",
         "scannedAt",
         "durationMs",
         "costUsd",
+        "usage",
         "stack",
         "fileCount",
         "totalBytes",

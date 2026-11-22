@@ -1,4 +1,4 @@
-export { ENGINE_VERSION, RUBRIC_VERSION } from "./version.js";
+export { ENGINE_VERSION, PROMPT_VERSION, RUBRIC_VERSION } from "./version.js";
 export * from "./types.js";
 export * from "./registry.js";
 export * from "./snapshot.js";
@@ -10,6 +10,7 @@ export * from "./llm/context.js";
 export * from "./llm/schemas.js";
 export * from "./llm/citation.js";
 export * from "./llm/passes.js";
+export * from "./llm/cost.js";
 export * from "./scan.js";
 export * from "./operate.js";
 export * from "./render.js";

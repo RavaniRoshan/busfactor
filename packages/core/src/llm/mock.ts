@@ -1,22 +1,33 @@
 import { AnthropicProvider } from "./anthropic.js";
 import { GroqProvider } from "./groq.js";
-import type { LLMProvider, LLMRequest } from "./provider.js";
+import type { LLMProvider, LLMRequest, LLMUsage } from "./provider.js";
+import { emptyUsage } from "./provider.js";
 
 export class MockProvider implements LLMProvider {
   readonly name = "mock";
+  readonly model = "mock";
+  private readonly usage: LLMUsage = emptyUsage(this.name, this.model);
 
   constructor(private readonly responder?: (request: LLMRequest) => string) {}
 
   async complete(request: LLMRequest): Promise<string> {
+    this.usage.requests += 1;
     if (this.responder !== undefined) return this.responder(request);
     return "{}";
+  }
+
+  getUsage(): LLMUsage {
+    return { ...this.usage };
   }
 }
 
 export class HeuristicProvider implements LLMProvider {
   readonly name = "heuristic";
+  readonly model = "heuristic";
+  private readonly usage: LLMUsage = emptyUsage(this.name, this.model);
 
   async complete(request: LLMRequest): Promise<string> {
+    this.usage.requests += 1;
     const text = `${request.system}\n${request.user}`.toLowerCase();
     if (text.includes("repository map")) {
       return JSON.stringify({
@@ -37,6 +48,10 @@ export class HeuristicProvider implements LLMProvider {
       return JSON.stringify({ risks: [] });
     }
     return "{}";
+  }
+
+  getUsage(): LLMUsage {
+    return { ...this.usage };
   }
 }
 

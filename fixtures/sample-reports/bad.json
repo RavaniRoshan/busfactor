@@ -2,13 +2,13 @@
   "score": 38,
   "verdict": "author-only",
   "dimensions": [
-    { "dimension": "runnability", "label": "Runnability", "score": 5, "weight": 20, "weightedScore": 1, "findingCount": 2 },
-    { "dimension": "secrets_config", "label": "Secrets and config", "score": 0, "weight": 15, "weightedScore": 0, "findingCount": 1 },
-    { "dimension": "failure_observability", "label": "Failure handling and observability", "score": 35, "weight": 15, "weightedScore": 5.25, "findingCount": 3 },
-    { "dimension": "tests_ci", "label": "Tests and CI", "score": 20, "weight": 15, "weightedScore": 3, "findingCount": 2 },
-    { "dimension": "critical_paths", "label": "Critical paths", "score": 40, "weight": 15, "weightedScore": 6, "findingCount": 2 },
-    { "dimension": "dependencies", "label": "Dependencies", "score": 50, "weight": 10, "weightedScore": 5, "findingCount": 1 },
-    { "dimension": "knowledge_capture", "label": "Knowledge capture", "score": 25, "weight": 10, "weightedScore": 2.5, "findingCount": 1 }
+    {"dimension":"runnability","label":"Runnability","score":5,"weight":20,"weightedScore":1,"findingCount":2},
+    {"dimension":"secrets_config","label":"Secrets and config","score":0,"weight":15,"weightedScore":0,"findingCount":1},
+    {"dimension":"failure_observability","label":"Failure handling and observability","score":35,"weight":15,"weightedScore":5.25,"findingCount":3},
+    {"dimension":"tests_ci","label":"Tests and CI","score":20,"weight":15,"weightedScore":3,"findingCount":2},
+    {"dimension":"critical_paths","label":"Critical paths","score":40,"weight":15,"weightedScore":6,"findingCount":2},
+    {"dimension":"dependencies","label":"Dependencies","score":50,"weight":10,"weightedScore":5,"findingCount":1},
+    {"dimension":"knowledge_capture","label":"Knowledge capture","score":25,"weight":10,"weightedScore":2.5,"findingCount":1}
   ],
   "findings": [
     {
@@ -17,14 +17,7 @@
       "ruleId": "secret.github.token",
       "severity": "critical",
       "message": "A GitHub token is committed in the repository.",
-      "evidence": [
-        {
-          "file": ".env",
-          "lineStart": 2,
-          "lineEnd": 2,
-          "quote": "GITHUB_TOKEN=ghp_...[REDACTED]"
-        }
-      ],
+      "evidence": [{"file":".env","lineStart":2,"lineEnd":2,"quote":"GITHUB_TOKEN=ghp_...[REDACTED]"}],
       "source": "deterministic",
       "validated": true
     }
@@ -34,24 +27,26 @@
       "id": "q1",
       "question": "How is the database restored after a failed migration?",
       "why": "No rollback script or documented recovery path exists.",
-      "evidence": [
-        {
-          "file": "migrations/001.sql",
-          "lineStart": 1,
-          "lineEnd": 1,
-          "quote": "DROP TABLE users;"
-        }
-      ]
+      "evidence": [{"file":"migrations/001.sql","lineStart":1,"lineEnd":1,"quote":"DROP TABLE users;"}]
     }
   ],
   "operateMd": "# OPERATE.md\n\nUNKNOWN: ask the author how to run this service.\n",
   "meta": {
     "engineVersion": "0.1.0",
     "rubricVersion": "0.1.0",
+    "promptVersion": "0.1.0",
     "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "scannedAt": "2026-11-20T00:00:00.000Z",
     "durationMs": 2500,
     "costUsd": 0.05,
+    "usage": {
+      "provider": "groq",
+      "model": "openai/gpt-oss-20b",
+      "inputTokens": 500,
+      "outputTokens": 200,
+      "cachedTokens": 0,
+      "requests": 1
+    },
     "stack": "python",
     "fileCount": 9,
     "totalBytes": 2100,

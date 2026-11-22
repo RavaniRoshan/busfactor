@@ -81,21 +81,44 @@ export async function POST(request: Request) {
     const slug = makeSlug();
     await store.reports.set(slug, { slug, report, public: false });
     await store.reportCache.set(rawTarget, { slug, report });
-    const costUsd = Number((report as { meta?: { costUsd?: number } }).meta?.costUsd ?? 0);
+    const meta = (report as {
+      meta?: {
+        costUsd?: number;
+        promptVersion?: string;
+        usage?: {
+          provider: string;
+          model: string;
+          inputTokens: number;
+          outputTokens: number;
+          cachedTokens: number;
+          requests: number;
+        };
+      };
+    }).meta;
+    const costUsd = Number(meta?.costUsd ?? 0);
     await store.spend.add(costUsd);
-    const model =
-      typeof (report as { meta?: { model?: unknown } }).meta?.model === "string"
-        ? ((report as { meta?: { model?: string } }).meta?.model ?? null)
-        : null;
+    const usage = meta?.usage;
+    if (usage) {
+      await scanJobs.recordCost({
+        scanId: id,
+        provider: usage.provider,
+        model: usage.model,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        cachedTokens: usage.cachedTokens,
+        requests: usage.requests,
+        costUsd,
+      });
+    }
     await scanJobs.complete(id, {
       reportSlug: slug,
       durationMs: Date.now() - startedAt,
       cacheHit: false,
       costUsd,
-      model,
+      model: usage?.model ?? null,
       engineVersion: ENGINE_VERSION,
       rubricVersion: RUBRIC_VERSION,
-      promptVersion: PROMPT_VERSION,
+      promptVersion: meta?.promptVersion ?? PROMPT_VERSION,
     });
     return Response.json({ id, status: "complete", slug, report });
   } catch (error) {

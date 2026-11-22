@@ -4,7 +4,9 @@ import { scoreFindings } from "./scoring.js";
 import { generateOperateMd } from "./operate.js";
 import { runLlmPasses } from "./llm/passes.js";
 import { createDefaultProvider } from "./llm/mock.js";
-import { ENGINE_VERSION, RUBRIC_VERSION } from "./version.js";
+import { ENGINE_VERSION, PROMPT_VERSION, RUBRIC_VERSION } from "./version.js";
+import { estimateCostUsd, rateFor } from "./llm/cost.js";
+import { emptyUsage } from "./llm/provider.js";
 import type { LLMProvider } from "./llm/provider.js";
 import type { Report, Snapshot } from "./types.js";
 import { reportSchema } from "./types.js";
@@ -49,6 +51,9 @@ export async function scanSnapshot(snapshot: Snapshot, options: ScanOptions = {}
     limitations.push("Limited analysis: unsupported or partially supported stack.");
   }
 
+  const usage = provider.getUsage?.() ?? emptyUsage(provider.name);
+  const costUsd = estimateCostUsd(usage, rateFor(usage));
+
   const report = {
     score: scored.score,
     verdict: scored.verdict,
@@ -59,10 +64,12 @@ export async function scanSnapshot(snapshot: Snapshot, options: ScanOptions = {}
     meta: {
       engineVersion: ENGINE_VERSION,
       rubricVersion: RUBRIC_VERSION,
+      promptVersion: PROMPT_VERSION,
       sha: snapshot.sha,
       scannedAt: (options.now ?? new Date()).toISOString(),
       durationMs: Date.now() - startedAt,
-      costUsd: 0,
+      costUsd,
+      usage,
       stack: snapshot.stack,
       fileCount: snapshot.stats.fileCount,
       totalBytes: snapshot.stats.totalBytes,
