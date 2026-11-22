@@ -383,9 +383,9 @@ function createPostgresStore(): ScanJobStore {
            count(*) FILTER (WHERE status = 'running')::int AS running,
            count(*) FILTER (WHERE status = 'complete' AND cache_hit = true)::int AS cache_hits,
            percentile_cont(0.5) WITHIN GROUP (ORDER BY duration_ms)
-             FILTER (WHERE status = 'complete' AND duration_ms IS NOT NULL) AS median_duration_ms,
+             FILTER (WHERE duration_ms IS NOT NULL) AS median_duration_ms,
            percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms)
-             FILTER (WHERE status = 'complete' AND duration_ms IS NOT NULL) AS p95_duration_ms
+             FILTER (WHERE duration_ms IS NOT NULL) AS p95_duration_ms
          FROM scan_jobs
          WHERE created_at >= now() - ($1::text || ' days')::interval`,
         [String(days)]

@@ -55,4 +55,16 @@ describe("scan jobs", () => {
       p95DurationMs: 4000,
     });
   });
+
+  it("includes failed job durations in percentile calculations", () => {
+    const jobs = [1000, 2000, 3000, 4000].map((durationMs, index) => ({
+      ...base,
+      id: `jf${index}`,
+      status: index === 3 ? ("failed" as const) : ("complete" as const),
+      durationMs,
+    }));
+    const metrics = computeJobMetrics(jobs);
+    expect(metrics.medianDurationMs).toBe(2500);
+    expect(metrics.p95DurationMs).toBe(4000);
+  });
 });

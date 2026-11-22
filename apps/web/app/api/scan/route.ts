@@ -49,33 +49,33 @@ export async function POST(request: Request) {
     promptVersion: PROMPT_VERSION,
   });
 
-  const cached = await store.reportCache.get(rawTarget);
-  if (cached) {
-    await scanJobs.complete(id, {
-      reportSlug: cached.slug,
-      durationMs: 0,
-      cacheHit: true,
-      costUsd: 0,
-      model: null,
-      engineVersion: ENGINE_VERSION,
-      rubricVersion: RUBRIC_VERSION,
-      promptVersion: PROMPT_VERSION,
-    });
-    return Response.json({
-      id,
-      status: "complete",
-      slug: cached.slug,
-      report: cached.report,
-      cached: true,
-    });
-  }
-
-  const nodePath = await import("node:path");
-  const target = /^https?:\/\//i.test(rawTarget)
-    ? rawTarget
-    : nodePath.resolve(/*turbopackIgnore: true*/ process.cwd(), "..", "..", rawTarget);
-
   try {
+    const cached = await store.reportCache.get(rawTarget);
+    if (cached) {
+      await scanJobs.complete(id, {
+        reportSlug: cached.slug,
+        durationMs: 0,
+        cacheHit: true,
+        costUsd: 0,
+        model: null,
+        engineVersion: ENGINE_VERSION,
+        rubricVersion: RUBRIC_VERSION,
+        promptVersion: PROMPT_VERSION,
+      });
+      return Response.json({
+        id,
+        status: "complete",
+        slug: cached.slug,
+        report: cached.report,
+        cached: true,
+      });
+    }
+
+    const nodePath = await import("node:path");
+    const target = /^https?:\/\//i.test(rawTarget)
+      ? rawTarget
+      : nodePath.resolve(/*turbopackIgnore: true*/ process.cwd(), "..", "..", rawTarget);
+
     const core = await import("../../../../../packages/core/dist/index.js" /*turbopackIgnore: true*/);
     const { report } = await core.scanTarget(target, {});
     const slug = makeSlug();

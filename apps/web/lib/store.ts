@@ -1,14 +1,5 @@
 import { ensureSchema, getPool, hasDatabase } from "./db";
 
-export interface ScanJob {
-  id: string;
-  status: "running" | "complete" | "failed";
-  slug?: string;
-  report?: unknown;
-  error?: string;
-  public: boolean;
-}
-
 export interface StoredReport {
   slug: string;
   report: unknown;
@@ -32,7 +23,6 @@ interface SpendStore {
 }
 
 export interface Store {
-  jobs: KV<ScanJob>;
   reports: KV<StoredReport>;
   reportCache: KV<{ report: unknown; slug: string }>;
   rateLimits: RateLimitStore;
@@ -64,14 +54,12 @@ function createMemoryStore(): Store {
   const globalStore = globalThis as GlobalStore;
   if (globalStore.__busfactorStore) return globalStore.__busfactorStore;
 
-  const jobs = new Map<string, ScanJob>();
   const reports = new Map<string, StoredReport>();
   const reportCache = new Map<string, { report: unknown; slug: string }>();
   const rateLimits = new Map<string, { day: string; count: number }>();
   const spend = { usd: 0 };
 
   const store: Store = {
-    jobs: memoryKV(jobs),
     reports: memoryKV(reports),
     reportCache: memoryKV(reportCache),
     rateLimits: {
@@ -140,7 +128,6 @@ function pgKV<T>(namespace: string): KV<T> {
 
 function createPostgresStore(): Store {
   return {
-    jobs: pgKV<ScanJob>("jobs"),
     reports: pgKV<StoredReport>("reports"),
     reportCache: pgKV<{ report: unknown; slug: string }>("report_cache"),
     rateLimits: {
